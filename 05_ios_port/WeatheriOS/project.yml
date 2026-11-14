@@ -29,6 +29,7 @@ settings:
     CURRENT_PROJECT_VERSION: "6"
     TARGETED_DEVICE_FAMILY: "1,2"
     ENABLE_USER_SCRIPT_SANDBOXING: NO
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     CLANG_ENABLE_MODULES: YES
 
 targets:
@@ -75,7 +76,9 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kiankonrad.weather
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Support/Info.plist
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        # AppIcon.appiconset is rendered from the APK's own vector by
+        # 07_tools/make-app-icon.swift; this empty value used to suppress it.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ENABLE_PREVIEWS: YES
         SUPPORTS_MACCATALYST: NO
         CODE_SIGN_STYLE: Automatic

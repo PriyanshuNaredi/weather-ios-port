@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 2026-11-14 (identity) — app icon, creator credit, README
+
+- **App icon:** rendered at 1024×1024 from the APK's own vector
+  (`res/drawable/ic_weather_foreground.xml`) by the new `07_tools/make-app-icon.swift` — an
+  Android `pathData` parser (M/L/C/A/Z, endpoint→centre arc conversion) driving CoreGraphics,
+  fitted by measuring the rendered ink in a probe pass so the glyph is centred to the pixel.
+  Opaque dark-navy plate because the adaptive icon's background is transparent and iOS
+  forbids alpha. The app target had `ASSETCATALOG_COMPILER_APPICON_NAME: ""`, which is why no
+  icon ever compiled; now `AppIcon`, `Assets.car` ships, verified on the simulator home screen.
+- **Creator credit:** Settings footer now reads "Weather 1.1.1 for iOS / iOS port created by
+  Priyanshu Naredi / Based on Weather for Android by Kian Konrad (MIT) / Open source · MIT
+  license" — the port names its author and keeps the original's.
+- **README:** rewritten around the APK → IPA port — status, layout, "what the port involved"
+  (bring-up, cosmetic parity, behaviour, audit findings, assets), deliberate departures from
+  Compose, and a pointer to `CREDITS.md`.
+- Verified: 87 logic tests, 11 UI tests; home-screen icon and Settings footer read back from
+  simulator screenshots.
+
 ## 2026-11-14 (map + docs) — full-bleed temperature colours, few clean badges, credits
 
 - **Temperature layer:** the colour field is full-bleed again (whole viewport, as Kotlin's

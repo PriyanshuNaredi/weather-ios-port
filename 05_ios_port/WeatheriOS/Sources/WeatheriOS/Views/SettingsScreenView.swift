@@ -100,8 +100,9 @@ struct SettingsScreenView: View {
                     }
                 }
 
-                // Kotlin line 435 — version footer, exact wording.
-                Text("Weather 1.1.1\nCreated by Kian Konrad\nOpen source · MIT license")
+                // Kotlin line 435 — version footer. The port names its own author and
+                // keeps the original's: the artwork, wording and behaviour are theirs.
+                Text("Weather 1.1.1 for iOS\niOS port created by Priyanshu Naredi\nBased on Weather for Android by Kian Konrad (MIT)\nOpen source · MIT license")
                     .font(.system(size: 13))
                     .foregroundStyle(WeatherTheme.muted)
                     .lineSpacing(7)

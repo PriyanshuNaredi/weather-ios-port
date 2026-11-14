@@ -1,7 +1,7 @@
 # Credits and upstream projects
 
 Weather for iOS is a native SwiftUI port of **Weather for Android** by Kian Konrad
-(`Kian-hdr/Weather`, MIT). Everything below is somebody else's work; this file exists so
+(`Kian-hdr/Weather`, MIT), ported by **Priyanshu Naredi**. Everything below is somebody else's work; this file exists so
 the debt is written down in one place rather than buried in code comments.
 
 Port status: the Android app (APK, Kotlin + Jetpack Compose + MapLibre GL) now runs as a
@@ -13,7 +13,7 @@ Screens, wording, colour stops, cache budgets and API calls were ported from
 
 | Project | What it provides here | Terms | Link |
 |---|---|---|---|
-| **Weather for Android** (Kian Konrad) | The original app: UI, flow, wording, colour stops, cache policy, API usage — the reference this port is measured against | MIT | <https://github.com/Kian-hdr/Weather> |
+| **Weather for Android** (Kian Konrad) | The original app: UI, flow, wording, colour stops, cache policy, API usage, and the icon vector the iOS app renders — the reference this port is measured against | MIT | <https://github.com/Kian-hdr/Weather> |
 | **Open-Meteo** | Forecast, current conditions, hourly/daily series, air quality | Service under AGPL-3.0; data CC BY 4.0 — attribution required | <https://open-meteo.com/> |
 | **CAMS** (Copernicus Atmosphere Monitoring Service, via Open-Meteo) | AQI, PM2.5 and the pollutant read-outs | Copernicus licence; attribution required | <https://open-meteo.com/en/docs/air-quality-api> |
 | **GeoNames** (via Open-Meteo geocoding) | City search and city metadata (country, admin area, time zone) | CC BY 4.0 | <https://open-meteo.com/en/docs/geocoding-api> |

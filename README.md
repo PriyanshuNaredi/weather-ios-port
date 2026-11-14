@@ -4,6 +4,11 @@ A native SwiftUI reimplementation of the Android weather app
 ([Kian-hdr/Weather](https://github.com/Kian-hdr/Weather), Kotlin + Compose + MapLibre GL,
 MIT), built by reverse-engineering the APK and porting its behaviour screen by screen.
 
+**iOS port: Priyanshu Naredi.** Original Android app: **Kian Konrad** (MIT) — every screen,
+string, colour stop and cache budget in this port comes from his source. The app icon is
+rendered from his `ic_weather_foreground.xml` vector by `07_tools/make-app-icon.swift`, not
+redrawn by hand.
+
 **Status: working.** The port builds, launches and runs on the iOS Simulator from a clean
 clone; the Android source is the reference for every screen, string, colour stop and cache
 budget. It is an unsigned development build — no Apple ID, signing team, TestFlight or App
@@ -34,6 +39,49 @@ Store involvement.
 
 Tracking: `PORT_GRAPH.md`, `PROJECT_STATUS.md`, `CHANGELOG.md`, `REPRODUCE.md`,
 `CODE_AUDIT.md`, `CREDITS.md`.
+
+## What the port involved
+
+Everything below is evidenced in `CHANGELOG.md`, `CODE_AUDIT.md` and
+`05_ios_port/MACOS_VERIFICATION.md`.
+
+**Bring-up and stability**
+- XcodeGen spec as the source of truth (`project.yml`), generated `.xcodeproj` gitignored.
+- Swift 5 language mode: Swift 6 strict concurrency rejected `DiagLog`'s `mach_task_self_`
+  and `WeatherMapView`'s `inFlight`, Darwin-only paths the Linux build never compiled.
+- `ForecastPageModel.init` rebuilt the model on every `onWeather` callback — a 22 Hz
+  invalidation loop at 100% CPU. Now 5.7% idle.
+- O(n²) `uniqued` → `Set`; `DateFormatter` churn removed; metric-grid layout feedback fixed.
+- Basemap: CARTO returned "API KEY REQUIRED" placeholder tiles, replaced with keyless ESRI
+  World Dark Gray.
+
+**Cosmetic parity with the Compose app**
+- `GlassPanel` wrapped card modifiers around a view-builder tuple, painting every child as
+  its own card; one `VStack` fixed all 13 call sites.
+- Bottom bar rebuilt to `MainActivity.kt` (labels + 12 pt padding), edge scrims bound to
+  `safeAreaInsets`, saved cities as `GlassPanel` cards, `Grid` for equal metric-tile heights,
+  round-capped `RangeBar`, 44 pt targets, diagnostics moved out of the bar into Settings.
+
+**Behaviour**
+- Radar opens on the oldest frame and plays the window once (~10 s), stopping at "now"
+  instead of parking at the newest frame looking already-played.
+- Temperature layer paints full-bleed colours with five badges, greedily spaced, kept off
+  the screen edges, both overlay panels and the city marker.
+- `+` Add-city control on the forecast header; `Map` / `Settings` / `Cities` bar labels kept.
+
+**Audit (ponytail method, findings in `CODE_AUDIT.md`)**
+- `LocationFinder.ensureAuthorized` deadlocked for a second caller (continuation stored
+  after `unlock`, authorization never requested) — now waiter-queue based.
+- `currentLocation`'s 18 s timeout never fired (`withTaskGroup` waits for every child) —
+  now `withTaskCancellationHandler`; regression test `testUseMyLocationTerminates`.
+- `DiskTileCache.store` re-sorted the whole index per tile; GeoNames `id` is a number, so
+  every city key fell back to "lat,lon".
+- Dead code removed (`legacyCartoBasemapTile`, debug-only views gated behind `#if DEBUG`).
+
+**Assets and docs**
+- App icon generated from the APK's vector (`07_tools/make-app-icon.swift`), verified on the
+  simulator home screen.
+- `CREDITS.md` for attribution, `README.md` for status, `CHANGELOG.md` per change.
 
 ## Key facts (verified)
 
