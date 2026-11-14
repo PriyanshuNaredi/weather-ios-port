@@ -212,38 +212,46 @@ private struct WeatherMainView: View {
     }
 
     // Kotlin lines 147-152 — bar `Row(background(Color(0xD9122E50)).padding(horizontal = 12.dp),
-    // Arrangement.SpaceBetween)` holding three `IconButton`s (48 dp targets, no text
-    // labels) with the page dots as the weighted middle. Icon colours come from
-    // `onSurfaceVariant` (= Muted) and there is no selected-vs-unselected tint in
-    // the Compose source; only the dots indicate the page. The iOS diagnostics
-    // entry that used to sit here (crowding the Cities button) now lives in
-    // Settings — it has no Android counterpart.
+    // Arrangement.SpaceBetween)` holding three `IconButton`s with the page dots as the
+    // weighted middle. Two deliberate departures from Compose:
+    //  1. The dots are centred on the SCREEN, not on the leftover gap. Kotlin's
+    //     `map | weighted(dots) | settings | cities` puts the dots 24 pt left of
+    //     centre (one icon on the left, two on the right), which reads as a
+    //     misaligned indicator.
+    //  2. Short labels are back under the icons. Icon-only parity hid the only
+    //     entry point to adding a city (the bulleted-list glyph), which is not a
+    //     trade worth making for a glyph nobody can identify.
     private var bottomBar: some View {
-        HStack(spacing: 0) {
+        // 12 pt between the two right-hand buttons: at 48 pt targets they read as
+        // a clump otherwise (the labels are what make the targets wider now).
+        HStack(spacing: 12) {
             barButton("map", icon: "map", label: "Map")
-            pageDots
+            Spacer(minLength: 0)
             barButton("settings", icon: "slider.horizontal.3", label: "Settings")
             barButton("cities", icon: "list.bullet", label: "Cities")
         }
         .padding(.horizontal, 12)
+        .overlay { pageDots }
         .background(WeatherTheme.bottomBar.ignoresSafeArea(edges: .bottom))
     }
 
-    // Kotlin line 149: `Row(spacedBy(6.dp), weight(1f)) { Spacer(weight(1f)); dots; Spacer(weight(1f)) }`
-    // 8 dp dots, Ink / Ink.copy(alpha=.35f), keyed by city id so they track the
-    // same identity as the pager pages.
+    // Kotlin line 149: 8 dp dots, Ink / Ink.copy(alpha=.35f), keyed by city id so
+    // they track the same identity as the pager pages. Exposed as one element so
+    // its centring can be measured (see WeatherSurfacesTests).
     private var pageDots: some View {
         HStack(spacing: 6) {
-            Spacer(minLength: 0)
             ForEach(Array(viewModel.cities.enumerated()), id: \.element.id) { _, city in
                 Circle()
                     .fill(city.id == viewModel.cities[safe: viewModel.currentIndex]?.id
                         ? WeatherTheme.ink : WeatherTheme.ink.opacity(0.35))
                     .frame(width: 8, height: 8)
             }
-            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity)
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Page indicator")
+        .accessibilityValue("\(viewModel.currentIndex + 1) of \(max(viewModel.cities.count, 1))")
     }
 
     private func barButton(_ screen: String, icon: String, label: String) -> some View {
@@ -253,10 +261,14 @@ private struct WeatherMainView: View {
                 viewModel.navigate(to: target)
             }
         } label: {
-            Image(systemName: icon)
-                .font(.system(size: 22))
-                .foregroundStyle(WeatherTheme.muted)
-                .frame(width: 48, height: 48)
+            VStack(spacing: 2) {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                Text(label)
+                    .font(.system(size: 10))
+            }
+            .foregroundStyle(WeatherTheme.muted)
+            .frame(minWidth: 48, minHeight: 48)
             // Navigation fix: an explicit content shape guarantees the whole
             // padded area is tappable (a label-only hit area can miss taps on
             // device when the glyph view reports a near-zero hit region).

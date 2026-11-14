@@ -18,6 +18,12 @@ memory of the screenshots. Screenshot walk: `07_tools/visual-audit.sh` →
   The text labels the port had invented are gone, and the debug **info button that
   crowded Cities is removed from the bar** — diagnostics now lives at the end of
   Settings, since Android has no such control.
+- **Page indicator centred on the screen** — Kotlin's asymmetric bar (one icon left,
+  two right) centres the dots in the leftover gap, which put them 24 pt left of centre
+  on a 393 pt screen. The dots are now an overlay on the bar's full width and exposed as
+  a "Page indicator" element, asserted by `testPageIndicatorIsCentred`.
+- **Bar labels restored** (Map / Settings / Cities) with 12 pt between the right-hand
+  buttons: icon-only parity hid the only entry point to adding a city.
 - **Bottom bar is a real layout sibling again** — Kotlin's `Column { HorizontalPager(weight 1f)
   ; Row(bar) }` means forecast content never runs under the bar. `.safeAreaInset` reserved the
   space for the resting scroll position but still let rows scroll visibly behind the translucent

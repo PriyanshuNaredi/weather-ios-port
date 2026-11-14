@@ -67,6 +67,20 @@ final class WeatherSurfacesTests: XCTestCase {
     }
 
     /// Settings: units switch round-trip and the bundled legal texts.
+    /// The page indicator must sit on the screen's centre line. Kotlin's
+    /// asymmetric bar (one icon left, two right) centres the dots in the leftover
+    /// gap instead, which put them 24 pt left of centre on a 393 pt screen.
+    func testPageIndicatorIsCentred() {
+        let app = XCUIApplication.launchWithCity()
+
+        let dots = app.otherElements["Page indicator"]
+        XCTAssertTrue(dots.waitForExistence(timeout: 20), "page indicator missing")
+        let screenMid = app.windows.firstMatch.frame.midX
+        XCTAssertEqual(dots.frame.midX, screenMid, accuracy: 1.0,
+                       "page indicator is \(dots.frame.midX - screenMid) pt off centre")
+        XCTAssertEqual(dots.frame.height, 8, accuracy: 1.0, "dot size should be 8 pt")
+    }
+
     func testSettingsUnitsAndLegalTexts() {
         let app = XCUIApplication.launchWithCity()
 
