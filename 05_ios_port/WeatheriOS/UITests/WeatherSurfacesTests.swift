@@ -67,6 +67,26 @@ final class WeatherSurfacesTests: XCTestCase {
     }
 
     /// Settings: units switch round-trip and the bundled legal texts.
+    /// The radar window plays once when the map opens, starting at the oldest
+    /// frame, then stops. Regression guard for "the video looks already played":
+    /// the playhead used to be parked on the newest frame with nothing playing.
+    func testRadarPlaysOnceFromTheStartWhenMapOpens() {
+        let app = XCUIApplication.launchWithCity()
+
+        let mapButton = app.buttons["Map"]
+        XCTAssertTrue(mapButton.waitForExistence(timeout: 20), "map button missing")
+        mapButton.tap()
+
+        let pause = app.buttons["Pause radar"]
+        XCTAssertTrue(pause.waitForExistence(timeout: 25),
+                      "radar did not start playing when the map opened")
+
+        // It must stop on the newest frame, not loop forever.
+        let play = app.buttons["Play recent radar"]
+        XCTAssertTrue(play.waitForExistence(timeout: 25),
+                      "radar kept looping — it should stop after reaching the newest frame")
+    }
+
     /// The page indicator must sit on the screen's centre line. Kotlin's
     /// asymmetric bar (one icon left, two right) centres the dots in the leftover
     /// gap instead, which put them 24 pt left of centre on a 393 pt screen.

@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2026-11-14 (map) — radar window plays once from the start
+
+- **Fix:** opening the map parked the radar playhead on the **newest** frame with
+  nothing playing (`followLatest`, ported from Kotlin), so the loop read as "already
+  played". The first load now opens on the oldest frame and plays the window once,
+  stopping at the newest frame instead of looping. A later 5-minute refresh still
+  follows the newest frame only if the playhead was already there, so scrubbing is
+  never yanked.
+- **Tests/tools:** `testRadarPlaysOnceFromTheStartWhenMapOpens` (asserts Pause appears
+  on open, Play after the last frame); the audit walk now captures the map twice —
+  `audit-08-map-playing` (playhead left, 13-frame window ≈ 10 s) and
+  `audit-09-map-settled` (playhead right, stopped).
+- Verified: 87 logic tests, 11 UI tests pass.
+
 ## 2026-11-14 (evening) — `+` add-city control, ponytail audit, 6 fixes
 
 - **New:** `+` in the forecast header (iOS-only; Compose has no such control) opens the

@@ -72,9 +72,14 @@ final class VisualAuditTests: XCTestCase {
         app.buttons["Back"].tap()
         Thread.sleep(forTimeInterval: 1)
 
-        // 8. Map.
+        // 8. Map, captured twice: while the radar window is playing (playhead at
+        // the oldest frame) and after it stops on the newest frame.
         app.buttons["Map"].tap()
-        Thread.sleep(forTimeInterval: 6)
-        shot(app, "audit-08-map")
+        Thread.sleep(forTimeInterval: 1.2)
+        shot(app, "audit-08-map-playing")
+        // The window is ~13 frames at 0.7 s each (~10 s); wait past that so the
+        // settled capture shows the finished state.
+        Thread.sleep(forTimeInterval: 13)
+        shot(app, "audit-09-map-settled")
     }
 }

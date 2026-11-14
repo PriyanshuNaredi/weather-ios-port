@@ -562,6 +562,11 @@ struct WeatherMapView: View {
     @State private var timeline: RadarTimeline?
     @State private var index = -1
     @State private var playing = false
+    /// First open of the map plays the radar window once, from the oldest frame
+    /// to the newest, then stops. Kotlin just parks the playhead on the newest
+    /// frame (`followLatest`), which reads as "this already played": the slider
+    /// sits at the far right before the user has touched anything.
+    @State private var autoPlayOnce = false
     @State private var grid: TemperatureGrid?
     @State private var dirty = false
     @State private var radarLoading = false
@@ -660,6 +665,11 @@ struct WeatherMapView: View {
                 guard !Task.isCancelled else { return }
                 index = (index + 1) % frames.count
                 Diag.event("radar frame \(index + 1)/\(frames.count)")
+                if autoPlayOnce, index == frames.count - 1 {
+                    // Reached "now": stop instead of looping forever.
+                    autoPlayOnce = false
+                    playing = false
+                }
             }
         }
         .onDisappear {
@@ -1020,12 +1030,24 @@ struct WeatherMapView: View {
         radarError = nil
         defer { radarLoading = false }
         do {
-            let followLatest = index < 0 || index == (timeline?.frames.count ?? 0) - 1 && (timeline?.frames.isEmpty == false)
+            let firstLoad = index < 0
+            let followLatest = !firstLoad
+                && index == (timeline?.frames.count ?? 0) - 1
+                && (timeline?.frames.isEmpty == false)
             let newTimeline = try await repository.radar()
             timeline = newTimeline
             Diag.event("radar timeline loaded frames=\(newTimeline.frames.count)")
             let last = max(newTimeline.frames.count - 1, 0)
-            if followLatest {
+            if firstLoad {
+                // Open on the oldest frame and play the window once, so the
+                // animation starts when the page opens instead of appearing to
+                // have already finished at the newest frame.
+                index = 0
+                if newTimeline.frames.count > 1 {
+                    autoPlayOnce = true
+                    playing = true
+                }
+            } else if followLatest {
                 index = last
             } else {
                 index = min(max(index, 0), last)
