@@ -58,8 +58,8 @@ for test in m:
         shutil.move(src, os.path.join(out, name.split('_0_')[0] + '.png'))
 PY
 count=$(find "$OUT" -name '*.png' | wc -l | tr -d ' ')
-if [ "$count" -lt 9 ]; then
-  echo "FATAL: expected 9 screenshots, exported $count (attachments went to $BUNDLE/raw)"
+if [ "$count" -lt 10 ]; then
+  echo "FATAL: expected 10 screenshots, exported $count (attachments went to $BUNDLE/raw)"
   ls -la "$BUNDLE" 2>/dev/null
   exit 1
 fi

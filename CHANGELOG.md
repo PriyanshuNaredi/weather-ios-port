@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2026-11-14 (map) — temperature badges no longer clipped or buried
+
+- **Fix:** the temperature layer drew a badge at every other grid sample regardless of where
+  it landed, so badges were cut in half by the screen edges and hidden behind the top and
+  bottom panels (Kotlin's marker loop has the same behaviour). Badges are now placed only when
+  fully inside the map and clear of both panels, with checkerboard parity keeping the density.
+- **Measured:** at Tokyo / zoom 5 the visible badges went from 8 half-visible values
+  (including a clipped "6°" and "23…") to 5 full ones — 16°, 15°, 17°, 21°, 21°.
+- **Not changed:** the sampled area is still the whole viewport, so at zoom 5 the panel reads
+  "Area range: -20° to 28° C" — correct for a 21°N–48°N window, but wider than a city map reads.
+  Capping the sampled box is a product decision (see the audit notes in this commit's message).
+- Verified: 87 logic tests, 11 UI tests; map captured twice + temperature layer in the audit walk.
+
 ## 2026-11-14 (map) — radar window plays once from the start
 
 - **Fix:** opening the map parked the radar playhead on the **newest** frame with

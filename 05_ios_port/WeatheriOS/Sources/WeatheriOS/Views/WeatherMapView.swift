@@ -779,9 +779,23 @@ struct WeatherMapView: View {
     @ViewBuilder
     private func temperatureLabels(_ grid: TemperatureGrid) -> some View {
         GeometryReader { geo in
+            // A badge is ~46×26 pt; the top overlay column and the bottom control
+            // panel cover roughly 210 / 180 pt of the map at this text size. Labels
+            // whose badge would be cut by an edge or hidden behind a panel are
+            // skipped — the Kotlin marker loop drew them anyway, which read as
+            // half-visible numbers scattered at the borders.
+            let halfWidth: CGFloat = 30
+            // Panels cover the top and bottom strips; keep a margin above them.
+            let topInset: CGFloat = 160
+            let bottomInset: CGFloat = 150
             ForEach(Array(grid.points.enumerated()), id: \.offset) { n, p in
-                if p.temperature != nil, n / 7 % 2 == 0, n % 7 % 2 == 0 {
-                    let point = camera.screenPoint(lat: p.latitude, lon: p.longitude, size: geo.size)
+                // Kotlin labels every other sample; that rule no longer holds once
+                // edge/panel samples are dropped (it left only two badges), so the
+                // checkerboard parity keeps roughly the same density instead.
+                if p.temperature != nil, (n / 7 + n % 7) % 2 == 0,
+                   case let point = camera.screenPoint(lat: p.latitude, lon: p.longitude, size: geo.size),
+                   point.x > halfWidth, point.x < geo.size.width - halfWidth,
+                   point.y > topInset, point.y < geo.size.height - bottomInset {
                     Text(temp(p.temperature, imperial: imperial))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.white)

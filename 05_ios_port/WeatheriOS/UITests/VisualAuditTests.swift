@@ -81,5 +81,12 @@ final class VisualAuditTests: XCTestCase {
         // settled capture shows the finished state.
         Thread.sleep(forTimeInterval: 13)
         shot(app, "audit-09-map-settled")
+
+        // 9. Temperature layer (interpolated grid + numeric labels).
+        if app.buttons["Temperature"].exists {
+            app.buttons["Temperature"].tap()
+            Thread.sleep(forTimeInterval: 7)
+            shot(app, "audit-10-map-temperature")
+        }
     }
 }
