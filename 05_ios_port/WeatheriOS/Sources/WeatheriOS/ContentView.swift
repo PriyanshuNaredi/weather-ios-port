@@ -92,6 +92,7 @@ private struct WeatherMainView: View {
                 SettingsScreenView(
                     imperial: viewModel.imperial,
                     onImperial: { viewModel.setImperial($0) },
+                    onDiagnostics: { showDiagnostics = true },
                     onClose: { viewModel.back() })
             }
 
@@ -110,6 +111,22 @@ private struct WeatherMainView: View {
             }
         }
         .preferredColorScheme(.dark)
+        // Kotlin lines 159-160 — status-bar and navigation-bar scrims drawn OVER
+        // the atmospheric sky so the system chrome stays legible. An overlay, not
+        // a safeAreaInset: Kotlin reserves no layout space for them.
+        .overlay {
+            GeometryReader { proxy in
+                VStack(spacing: 0) {
+                    WeatherTheme.edgeScrim
+                        .frame(height: proxy.safeAreaInsets.top)
+                    Spacer(minLength: 0)
+                    WeatherTheme.edgeScrim
+                        .frame(height: proxy.safeAreaInsets.bottom)
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+            }
+        }
         // Runtime-debugging instrumentation (Phase 1): lifecycle + navigation
         // transitions. No coordinates or city names — screen names only.
         .onAppear { Diag.event("main view appear") }
@@ -185,60 +202,52 @@ private struct WeatherMainView: View {
         .safeAreaInset(edge: .bottom) { bottomBar }
     }
 
-    // Kotlin lines 155-161 — bottom bar buttons and page dots (Kotlin order:
-    // map | page dots | settings | cities).
+    // Kotlin lines 147-152 — bar `Row(background(Color(0xD9122E50)).padding(horizontal = 12.dp),
+    // Arrangement.SpaceBetween)` holding three `IconButton`s (48 dp targets, no text
+    // labels) with the page dots as the weighted middle. Icon colours come from
+    // `onSurfaceVariant` (= Muted) and there is no selected-vs-unselected tint in
+    // the Compose source; only the dots indicate the page. The iOS diagnostics
+    // entry that used to sit here (crowding the Cities button) now lives in
+    // Settings — it has no Android counterpart.
     private var bottomBar: some View {
-        HStack(spacing: 8) {
-            barButton("map", icon: "map", label: "Map", active: viewModel.screen == .map)
-            Spacer()
-            // Kotlin page indicator dots (line 148). Parity: Android highlights
-            // `pager.currentPage`, not app state — the accent dot is derived
-            // from the pager-fed `currentIndex`. Dots are keyed by city id so
-            // they track the same identity as the pager pages themselves.
-            if viewModel.cities.count > 1 {
-                HStack(spacing: 6) {
-                    ForEach(Array(viewModel.cities.enumerated()), id: \.element.id) { i, city in
-                        Circle()
-                            .fill(city.id == viewModel.cities[safe: viewModel.currentIndex]?.id
-                                ? WeatherTheme.accent : WeatherTheme.ink.opacity(0.30))
-                            .frame(width: 6, height: 6)
-                    }
-                }
-            }
-            Spacer()
-            barButton("settings", icon: "gearshape", label: "Settings", active: viewModel.screen == .settings)
-            barButton("cities", icon: "location", label: "Cities", active: viewModel.screen == .cities)
-            // TEMPORARY diagnostics entry point (runtime-debugging mission).
-            Button {
-                Diag.event("diag screen opened")
-                showDiagnostics = true
-            } label: {
-                Image(systemName: "info.circle")
-                    .font(.system(size: 13))
-                    .foregroundStyle(WeatherTheme.ink.opacity(0.45))
-                    .padding(6)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Diagnostics")
+        HStack(spacing: 0) {
+            barButton("map", icon: "map", label: "Map")
+            pageDots
+            barButton("settings", icon: "slider.horizontal.3", label: "Settings")
+            barButton("cities", icon: "list.bullet", label: "Cities")
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
         .background(WeatherTheme.bottomBar.ignoresSafeArea(edges: .bottom))
     }
 
-    private func barButton(_ screen: String, icon: String, label: String, active: Bool) -> some View {
+    // Kotlin line 149: `Row(spacedBy(6.dp), weight(1f)) { Spacer(weight(1f)); dots; Spacer(weight(1f)) }`
+    // 8 dp dots, Ink / Ink.copy(alpha=.35f), keyed by city id so they track the
+    // same identity as the pager pages.
+    private var pageDots: some View {
+        HStack(spacing: 6) {
+            Spacer(minLength: 0)
+            ForEach(Array(viewModel.cities.enumerated()), id: \.element.id) { _, city in
+                Circle()
+                    .fill(city.id == viewModel.cities[safe: viewModel.currentIndex]?.id
+                        ? WeatherTheme.ink : WeatherTheme.ink.opacity(0.35))
+                    .frame(width: 8, height: 8)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func barButton(_ screen: String, icon: String, label: String) -> some View {
         Button {
             Diag.event("nav bottom-bar tap -> \(screen)")
             if let target = Screen(rawValue: screen) {
                 viewModel.navigate(to: target)
             }
         } label: {
-            VStack(spacing: 2) {
-                Image(systemName: icon)
-                Text(label).font(.system(size: 10))
-            }
-            .foregroundStyle(active ? WeatherTheme.accent : WeatherTheme.ink.opacity(0.7))
-            .padding(6)
+            Image(systemName: icon)
+                .font(.system(size: 22))
+                .foregroundStyle(WeatherTheme.muted)
+                .frame(width: 48, height: 48)
             // Navigation fix: an explicit content shape guarantees the whole
             // padded area is tappable (a label-only hit area can miss taps on
             // device when the glyph view reports a near-zero hit region).

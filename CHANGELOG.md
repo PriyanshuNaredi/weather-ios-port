@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## 2026-11-14 (later) — Cosmetic parity overhaul: panels, bottom bar, grid
+
+Judged against the Compose source (`00_original/.../MainActivity.kt`), not against
+memory of the screenshots. Screenshot walk: `07_tools/visual-audit.sh` →
+`07_logs/shots/audit/`.
+
+- **Root cause of the "separate cards" Settings screen:** `GlassPanel` is the port of
+  Kotlin's `Glass`, which is a **Column**. The Swift version applied the card modifiers
+  to a bare view-builder tuple, so each child of a panel was laid out (and painted) as
+  its own card — the "Units" heading and its value row looked like two panels. Wrapping
+  the content in a `VStack` restores one card per panel everywhere (13 call sites).
+- **Bottom bar rebuilt to Kotlin geometry** (MainActivity.kt:147-152): icon-only 48 pt
+  targets, `padding(horizontal: 12)`, SpaceBetween with the dots as the weighted middle,
+  8 pt dots at 6 pt gaps, colour `onSurfaceVariant` (Muted) with no selected tint, icons
+  Map / Tune / FormatListBulleted → `map` / `slider.horizontal.3` / `list.bullet`.
+  The text labels the port had invented are gone, and the debug **info button that
+  crowded Cities is removed from the bar** — diagnostics now lives at the end of
+  Settings, since Android has no such control.
+- **Edge scrims added** (MainActivity.kt:159-160): `0x99112340` strips over the status
+  and navigation bars as an overlay (not a `safeAreaInset`), matching Compose.
+- **Saved-cities list is no longer a `List`:** rows are `GlassPanel` cards in a 12 pt
+  `LazyVStack`, as in Kotlin — no list insets, separators or row chrome.
+- **Metric grid:** tiles now share a row's height (`Grid` + `maxHeight` fill) so a long
+  summary no longer leaves one card short, and the summary wraps instead of truncating.
+- **Smaller parity fixes:** `ScreenHeader` back arrow is a 44 pt target with a 22 pt
+  glyph (Kotlin `IconButton` 48 dp); settings links and licence buttons are 44 pt tall
+  (Material `TextButton` 48 dp); hero temperature pinned to Kotlin's 112 pt line box;
+  range-bar caps are inset by their radius so the longest bar no longer renders a
+  square end; the search placeholder uses Muted like the Material field label.
+- **New tooling:** `07_tools/visual-audit.sh` + `UITests/VisualAuditTests.swift` capture
+  eight named screenshots of every surface (skipped in ordinary test runs).
+
+Verified: 87 logic tests and 7 UI tests pass (`1 skipped` = the audit walk).
+
 ## 2026-11-14 — First macOS/Xcode build: project generated, defects fixed, 94 tests green
 
 Mission: get the port actually building and working on the Hackintosh (macOS 15.5,

@@ -39,6 +39,11 @@ struct GlassPanel<Content: View>: View {
     }
 
     var body: some View {
+        // Kotlin `Glass` is a `Column` (MainActivity.kt:299-308), so its
+        // children stack vertically with no gaps. SwiftUI needs that stack
+        // explicitly: applying the card modifiers to a bare view-builder tuple
+        // makes every child render as its own card (that is why the Settings
+        // "Units" title and its value row appeared as two separate panels).
         let dark = LinearGradient(colors: [
             Color(red: 0x13 / 255, green: 0x29 / 255, blue: 0x45 / 255).opacity(0x66 / 255.0),
             Color(red: 0x10 / 255, green: 0x22 / 255, blue: 0x3C / 255).opacity(0x88 / 255.0),
@@ -49,7 +54,7 @@ struct GlassPanel<Content: View>: View {
         let border = LinearGradient(colors: [
             .white.opacity(0.25), .white.opacity(0.045), .white.opacity(0.11),
         ], startPoint: .topLeading, endPoint: .bottomTrailing)
-        return content
+        return VStack(alignment: .leading, spacing: 0) { content }
             .padding(16)
             .background(dark)
             .background(sheen)
@@ -102,18 +107,24 @@ struct ScreenHeader: View {
     let onClose: () -> Void
 
     var body: some View {
-        HStack {
+        HStack(spacing: 4) {
+            // Kotlin `IconButton` (48 dp target, 24 dp arrow) — not a bare glyph.
             Button(action: onClose) {
                 Image(systemName: "arrow.left")
-                    .font(.system(size: 18))
+                    .font(.system(size: 22))
                     .foregroundStyle(WeatherTheme.ink)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             .accessibilityLabel("Back")
             Text(title)
                 .font(.system(size: 28, weight: .medium))
+                .lineLimit(1)
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 4)
+        // Kotlin has no extra padding: the IconButton's own 48 dp box is the gap.
+        .padding(.leading, -6)
     }
 }
 

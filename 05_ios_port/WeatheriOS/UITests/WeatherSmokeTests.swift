@@ -60,12 +60,18 @@ final class WeatherSmokeTests: XCTestCase {
                       "cities screen did not render after nav")
     }
 
-    /// The diagnostics cover (runtime instrumentation surface).
+    /// The diagnostics cover (runtime instrumentation surface). It now lives at
+    /// the end of Settings: the bottom bar mirrors the Android layout, which has
+    /// no diagnostics icon.
     func testDiagnosticsScreenOpens() {
         let app = XCUIApplication.launchWithCity()
 
+        let settings = app.buttons["Settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 15), "settings button missing")
+        settings.tap()
+
         let diagnostics = app.buttons["Diagnostics"]
-        XCTAssertTrue(diagnostics.waitForExistence(timeout: 15), "diagnostics button missing")
+        XCTAssertTrue(diagnostics.waitForExistence(timeout: 10), "diagnostics entry missing from settings")
         diagnostics.tap()
         XCTAssertTrue(app.switches.firstMatch.waitForExistence(timeout: 10)
                       || app.buttons["Close"].waitForExistence(timeout: 5),

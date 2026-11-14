@@ -9,6 +9,10 @@ import SwiftUI
 struct SettingsScreenView: View {
     let imperial: Bool
     let onImperial: (Bool) -> Void
+    /// Diagnostics entry point. Kotlin has no equivalent in the bottom bar, and
+    /// it crowded the Cities button there, so the runtime-debug surface lives at
+    /// the end of Settings instead.
+    let onDiagnostics: () -> Void
     let onClose: () -> Void
 
     @State private var showLicenses = false
@@ -20,9 +24,12 @@ struct SettingsScreenView: View {
     /// delegates the single write to `onImperial`.
     @State private var imperialLocal: Bool
 
-    init(imperial: Bool, onImperial: @escaping (Bool) -> Void, onClose: @escaping () -> Void) {
+    init(imperial: Bool, onImperial: @escaping (Bool) -> Void,
+         onDiagnostics: @escaping () -> Void = {},
+         onClose: @escaping () -> Void) {
         self.imperial = imperial
         self.onImperial = onImperial
+        self.onDiagnostics = onDiagnostics
         self.onClose = onClose
         _imperialLocal = State(initialValue: imperial)
     }
@@ -99,6 +106,8 @@ struct SettingsScreenView: View {
 
                 Button { showLicenses = true } label: {
                     Text("Open-source licenses")
+                        .frame(minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(WeatherTheme.accent)
@@ -106,6 +115,17 @@ struct SettingsScreenView: View {
                 Link("Source code & downloads",
                      destination: URL(string: "https://github.com/Kian-hdr/Weather")!)
                     .foregroundStyle(WeatherTheme.accent)
+                    .frame(minHeight: 44, alignment: .leading)
+
+                // iOS-only runtime diagnostics (no Android counterpart); kept out
+                // of the bottom navigation bar, which mirrors the Compose layout.
+                Button { onDiagnostics() } label: {
+                    Text("Diagnostics")
+                        .font(.system(size: 13))
+                        .foregroundStyle(WeatherTheme.muted.opacity(0.8))
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -118,9 +138,12 @@ struct SettingsScreenView: View {
         }
     }
 
+    // Kotlin `TextButton` (Material 48 dp min height, start-aligned label).
     private func linkRow(_ name: String, _ url: String) -> some View {
         Link(name, destination: URL(string: url)!)
-            .padding(.vertical, 4)
+            .frame(minHeight: 44, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
     }
 }
 

@@ -166,6 +166,10 @@ struct ForecastPageView: View {
             }
             Text(temp(w.current.temperature, imperial: imperial))
                 .font(.system(size: 100, weight: .ultraLight))
+                // Kotlin pins lineHeight=112sp on the 100sp glyph; SwiftUI's default
+                // line box is ~119, which pushed the condition/H-L block down. The
+                // glyph is ~72pt tall, so a 112pt box crops nothing.
+                .frame(height: 112)
                 .accessibilityLabel("\(temp(w.current.temperature, imperial: imperial)) \(imperial ? "Fahrenheit" : "Celsius")")
             Text(condition(w.current.code))
                 .font(.system(size: 22))
@@ -303,13 +307,24 @@ struct ForecastPageView: View {
         let chunks = stride(from: 0, to: Metric.allCases.count, by: columns)
             .map { Array(Metric.allCases[$0..<min($0 + columns, Metric.allCases.count)]) }
         return VStack(alignment: .leading, spacing: 12) {
-            ForEach(Array(chunks.enumerated()), id: \.offset) { _, row in
-                HStack(alignment: .top, spacing: 12) {
-                    ForEach(row) { m in
-                        tile(m, w)
-                    }
-                    if row.count < columns {
-                        Spacer()
+            // `Grid` equalises each row to its tallest cell and lets cells fill that
+            // height, so the cards line up without reserving (and truncating) summary
+            // text — Kotlin's Row leaves the cards ragged instead.
+            Grid(alignment: .topLeading, horizontalSpacing: 12, verticalSpacing: 12) {
+                ForEach(Array(chunks.enumerated()), id: \.offset) { _, row in
+                    GridRow(alignment: .top) {
+                        ForEach(row) { m in
+                            // `maxHeight` is what makes the cards equal: `Grid`
+                            // proposes the row's tallest height to every cell, and a
+                            // frame that ignores the vertical proposal (maxWidth only)
+                            // keeps each card at its own content height.
+                            tile(m, w)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity,
+                                       alignment: .topLeading)
+                        }
+                        if row.count < columns {
+                            Color.clear.frame(maxWidth: .infinity, maxHeight: 0)
+                        }
                     }
                 }
             }
@@ -355,9 +370,15 @@ struct ForecastPageView: View {
                     .font(.system(size: 14))
                     .lineSpacing(5)
                     .foregroundStyle(WeatherTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 8)
             }
-            .frame(maxWidth: .infinity, minHeight: 136, alignment: .topLeading)
+            // `maxHeight` lets the card fill the Grid row's height; a minHeight-only
+            // frame returns the content's own height and ignores the taller proposal,
+            // which is why the cards stayed ragged. Bounded here: the Grid row is the
+            // source of the proposal.
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 136, maxHeight: .infinity,
+                   alignment: .topLeading)
         }
         .contentShape(Rectangle())
         // Stability fix: no force unwrap (tap may land after a refresh).
@@ -398,17 +419,24 @@ struct RangeBar: View {
     var body: some View {
         Canvas { context, size in
             let midY = size.height / 2
+            // Round caps are half a stroke wide, so drawing them flush to the
+            // Canvas edges clipped the cap flat — visible on the day whose range
+            // reaches the scale maximum (Thursday). Inset every endpoint by the
+            // cap radius so both ends stay round.
+            let radius = size.height / 2
+            let x0 = radius
+            let x1 = Swift.max(size.width - radius, x0)
             var track = Path()
-            track.move(to: CGPoint(x: 0, y: midY))
-            track.addLine(to: CGPoint(x: size.width, y: midY))
+            track.move(to: CGPoint(x: x0, y: midY))
+            track.addLine(to: CGPoint(x: x1, y: midY))
             context.stroke(track, with: .color(WeatherTheme.ink.opacity(0.12)),
                            style: StrokeStyle(lineWidth: size.height, lineCap: .round))
             guard let low, let high,
                   let (left, right) = RangeSpan.band(low: Double(low), high: Double(high),
                                                      min: Double(min), max: Double(max)) else { return }
             var band = Path()
-            band.move(to: CGPoint(x: size.width * CGFloat(left), y: midY))
-            band.addLine(to: CGPoint(x: size.width * CGFloat(right), y: midY))
+            band.move(to: CGPoint(x: x0 + (x1 - x0) * CGFloat(left), y: midY))
+            band.addLine(to: CGPoint(x: x0 + (x1 - x0) * CGFloat(right), y: midY))
             context.stroke(band, with: .linearGradient(
                 Gradient(colors: [teal, amber]),
                 startPoint: CGPoint(x: 0, y: midY), endPoint: CGPoint(x: size.width, y: midY)),

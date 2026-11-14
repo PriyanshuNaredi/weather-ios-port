@@ -84,3 +84,20 @@ permissions declared in `AndroidManifest.xml`.
   gesture path and responsiveness, not the device watchdog.
 - Android parity of the basemap change: the Android app still loads the OpenFreeMap
   dark vector style, which is unaffected; only the iOS raster endpoint moved.
+
+## Cosmetic parity pass (same day)
+
+Every screen was re-checked against the Compose source and re-captured with
+`./07_tools/visual-audit.sh` (output in `07_logs/shots/audit/`):
+
+| Surface | Was | Now |
+|---|---|---|
+| Settings "Units" | heading and value row painted as two cards | one card (GlassPanel now stacks children like Kotlin's Column) |
+| Bottom bar | text labels, 8 pt spacing, extra debug "i" beside Cities | icon-only 48 pt targets, SpaceBetween, 8 pt dots, 12 pt padding, no debug icon |
+| Status/nav bar | unscrimmed sky | `0x99112340` scrims over both edges |
+| Saved cities | `List` chrome | Glass cards, 12 pt apart |
+| Metric tiles | ragged row heights | equal per row, summary wraps (no ellipsis) |
+| Day range bars | square end at the scale maximum | round caps inset by radius |
+| Headers / links | small hit targets | 44 pt targets matching Material `IconButton`/`TextButton` |
+
+`VisualAuditTests` is skipped in normal runs; the suite reports `1 skipped`.

@@ -67,7 +67,7 @@ struct CityScreenView: View {
             ScreenHeader(title: "Weather", onClose: onClose)
         } else {
             VStack(alignment: .leading, spacing: 6) {
-                Spacer().frame(height: 12)
+                Spacer().frame(height: 28)
                 WeatherGlyph(code: 2, day: true, size: 72)
                 Text("Weather").font(.system(size: 44, weight: .light))
                 Text("Your day, at a glance.")
@@ -82,7 +82,10 @@ struct CityScreenView: View {
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass").foregroundStyle(WeatherTheme.muted)
-            TextField("Search city or postal code", text: $query)
+            // Material `OutlinedTextField` renders its label in `onSurfaceVariant`
+            // (= Muted), not the platform's dimmed placeholder grey.
+            TextField("", text: $query, prompt: Text("Search city or postal code")
+                .foregroundStyle(WeatherTheme.muted.opacity(0.75)))
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 .submitLabel(.search)
@@ -124,62 +127,63 @@ struct CityScreenView: View {
         .opacity(locating ? 0.6 : 1)
     }
 
-    // Kotlin LazyColumn, lines 417-421.
+    // Kotlin LazyColumn, lines 417-421 — cards spaced 12 dp, each row a Glass
+    // panel. Was a SwiftUI `List`, whose insets/separators/row chrome have no
+    // Android counterpart and made the saved-city rows read as a stock table.
     private var resultList: some View {
-        List {
-            if query.trimmingCharacters(in: .whitespaces).count >= 2 {
-                if !searching && results.isEmpty && error == nil {
-                    Text("No cities found. Try a nearby city.")
-                        .foregroundStyle(WeatherTheme.muted)
-                        .listRowBackground(Color.clear)
-                }
-                ForEach(results) { city in
-                    Button {
-                        onAdd(city)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(city.name).font(.system(size: 24))
-                            Text(city.country).foregroundStyle(WeatherTheme.muted)
-                        }
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                if query.trimmingCharacters(in: .whitespaces).count >= 2 {
+                    if !searching && results.isEmpty && error == nil {
+                        Text("No cities found. Try a nearby city.")
+                            .foregroundStyle(WeatherTheme.muted)
                     }
-                    .buttonStyle(.plain)
-                    .listRowBackground(Color.clear)
-                }
-            } else {
-                if cities.isEmpty {
-                    Text("Search for a city or choose your current location. Location access is optional.")
-                        .foregroundStyle(WeatherTheme.muted)
-                        .lineSpacing(6)
-                        .padding(.top, 12)
-                        .listRowBackground(Color.clear)
-                }
-                ForEach(cities) { city in
-                    HStack(alignment: .center) {
-                        Button {
-                            onAdd(city)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(city.name).font(.system(size: 26))
-                                Text(city.country.isEmpty ? "Current location" : city.country)
-                                    .foregroundStyle(WeatherTheme.muted)
+                    ForEach(results) { city in
+                        Button { onAdd(city) } label: {
+                            GlassPanel {
+                                Text(city.name).font(.system(size: 24))
+                                Text(city.country).foregroundStyle(WeatherTheme.muted)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } else {
+                    if cities.isEmpty {
+                        Text("Search for a city or choose your current location. Location access is optional.")
+                            .foregroundStyle(WeatherTheme.muted)
+                            .lineSpacing(6)
+                            .padding(.top, 12)
+                    }
+                    ForEach(cities) { city in
+                        GlassPanel {
+                            HStack(spacing: 8) {
+                                Button { onAdd(city) } label: {
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        Text(city.name).font(.system(size: 26))
+                                        Text(city.country.isEmpty ? "Current location" : city.country)
+                                            .foregroundStyle(WeatherTheme.muted)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.vertical, 8)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                Button { onRemove(city) } label: {
+                                    Image(systemName: "minus.circle")
+                                        .font(.system(size: 22))
+                                        .frame(width: 44, height: 44)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Remove \(city.name)")
                             }
                         }
-                        .buttonStyle(.plain)
-                        Spacer()
-                        Button {
-                            onRemove(city)
-                        } label: {
-                            Image(systemName: "minus.circle")
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Remove \(city.name)")
                     }
-                    .listRowBackground(Color.clear)
                 }
             }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
+        .scrollIndicators(.hidden)
     }
 
     // Kotlin TextButton, line 422 — GeoNames attribution link.
