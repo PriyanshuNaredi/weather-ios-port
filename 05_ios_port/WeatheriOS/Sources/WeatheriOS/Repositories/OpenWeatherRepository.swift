@@ -145,7 +145,13 @@ final class OpenWeatherRepository: WeatherRepository, MapRepository, @unchecked 
             let parts = [admin1, country].filter { !$0.isBlank }
             var distinctParts: [String] = []
             for part in parts where !distinctParts.contains(part) { distinctParts.append(part) }
-            let id = row["id"] as? String ?? "\(lat),\(lon)"
+            // GeoNames returns `id` as a NUMBER. Kotlin's `optString("id")`
+            // stringifies it; `as? String` alone fell back to "lat,lon", so the
+            // same city had a different identity than on Android.
+            let id: String
+            if let text = row["id"] as? String { id = text }
+            else if let number = jsonNumber(row, "id") { id = String(Int(number)) }
+            else { id = "\(lat),\(lon)" }
             let name = row["name"] as? String ?? ""
             let timezone = row["timezone"] as? String ?? "UTC"
             return City(id: id, name: name,

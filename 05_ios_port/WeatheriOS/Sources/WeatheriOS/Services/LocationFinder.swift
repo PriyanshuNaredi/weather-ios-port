@@ -18,7 +18,11 @@ final class LocationFinder: NSObject, CLLocationManagerDelegate {
     // callbacks on arbitrary queue threads.
     private let lock = NSLock()
     private nonisolated(unsafe) var locationContinuation: CheckedContinuation<CLLocationCoordinate2D?, Never>?
-    private nonisolated(unsafe) var authContinuation: CheckedContinuation<Bool, Never>?
+    /// Every caller waiting for the permission dialog, not just the first. The
+    /// previous single slot resumed the earlier waiter with `false` and never
+    /// called `requestWhenInUseAuthorization()` for the second caller, which then
+    /// waited for a delegate callback that had already been delivered — a hang.
+    private nonisolated(unsafe) var authWaiters: [CheckedContinuation<Bool, Never>] = []
 
     override private init() {
         super.init()
@@ -36,16 +40,12 @@ final class LocationFinder: NSObject, CLLocationManagerDelegate {
         case .notDetermined:
             return await withCheckedContinuation { continuation in
                 lock.lock()
-                if let existing = authContinuation {
-                    authContinuation = nil
-                    lock.unlock()
-                    existing.resume(returning: false)
-                    authContinuation = continuation
-                } else {
-                    authContinuation = continuation
-                    lock.unlock()
-                    manager.requestWhenInUseAuthorization()
-                }
+                let alreadyAsking = !authWaiters.isEmpty
+                authWaiters.append(continuation)
+                lock.unlock()
+                // One dialog at a time; every waiter is resumed by the same
+                // `locationManagerDidChangeAuthorization` callback.
+                if !alreadyAsking { manager.requestWhenInUseAuthorization() }
             }
         case .denied, .restricted:
             return false
@@ -57,13 +57,28 @@ final class LocationFinder: NSObject, CLLocationManagerDelegate {
     // Kotlin `findLocation` — last known fix if < 10 minutes old, else a single
     // fresh fix. Caller applies the 18 s timeout.
     func currentLocation() async -> (Double, Double)? {
-        let coordinate = await withCheckedContinuation { continuation in
+        // The cancellation handler is what makes the caller's timeout real: on
+        // cancel it resolves this continuation with nil, so the awaiting task
+        // finishes instead of being pinned by the parent's task group.
+        await withTaskCancellationHandler {
+            let coordinate = await withCheckedContinuation { continuation in
+                lock.lock()
+                // A previous attempt that timed out may still hold the slot;
+                // resolve it rather than leaking it.
+                let stale = locationContinuation
+                locationContinuation = continuation
+                lock.unlock()
+                stale?.resume(returning: nil)
+                manager.requestLocation()
+            }
+            return coordinate.map { ($0.latitude, $0.longitude) }
+        } onCancel: {
             lock.lock()
-            locationContinuation = continuation
+            let pending = locationContinuation
+            locationContinuation = nil
             lock.unlock()
-            manager.requestLocation()
+            pending?.resume(returning: nil)
         }
-        return coordinate.map { ($0.latitude, $0.longitude) }
     }
 
     // Kotlin `withTimeoutOrNull(18000)` (line 116) — 18 s outer timeout.
@@ -84,16 +99,16 @@ final class LocationFinder: NSObject, CLLocationManagerDelegate {
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         lock.lock()
-        let continuation = authContinuation
-        authContinuation = nil
+        let waiters = authWaiters
+        authWaiters = []
         lock.unlock()
-        guard let continuation else { return }
+        guard !waiters.isEmpty else { return }
+        let granted: Bool
         switch manager.authorizationStatus {
-        case .authorizedAlways, .authorizedWhenInUse:
-            continuation.resume(returning: true)
-        default:
-            continuation.resume(returning: false)
+        case .authorizedAlways, .authorizedWhenInUse: granted = true
+        default: granted = false
         }
+        for waiter in waiters { waiter.resume(returning: granted) }
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {

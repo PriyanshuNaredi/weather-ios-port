@@ -12,6 +12,10 @@ struct ForecastPageView: View {
     let now: Int
     let onMetric: (Weather, Metric) -> Void
     let onMap: () -> Void
+    /// Opens the saved-cities screen, whose search field adds a city. The Compose
+    /// app has no add control on the forecast page, so this is an iOS addition —
+    /// the bar's Cities button is the only other way in.
+    let onAddCity: () -> Void
     /// Kotlin `showMapPreview` parameter — true when no repository override is
     /// provided (Kotlin line 166 default), which is every call site here.
     var showMapPreview: Bool = true
@@ -30,12 +34,14 @@ struct ForecastPageView: View {
     init(city: City, repository: WeatherRepository & MapRepository, imperial: Bool,
          now: Int, onWeather: @escaping (Weather) -> Void,
          onMetric: @escaping (Weather, Metric) -> Void, onMap: @escaping () -> Void,
+         onAddCity: @escaping () -> Void = {},
          showMapPreview: Bool = true) {
         _model = State(initialValue: ForecastPageModel(city: city, repository: repository, onWeather: onWeather))
         self.imperial = imperial
         self.now = now
         self.onMetric = onMetric
         self.onMap = onMap
+        self.onAddCity = onAddCity
         self.showMapPreview = showMapPreview
     }
 
@@ -114,6 +120,20 @@ struct ForecastPageView: View {
         return ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 header(w)
+                    // iOS-only add control, top-right of the header block. Inside
+                    // the scrolling content so it never floats over rows.
+                    .overlay(alignment: .topTrailing) {
+                        Button(action: onAddCity) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(WeatherTheme.muted)
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Add city")
+                        .padding(.trailing, 4)
+                    }
                 if let error = model.error { Notice(message: error) { model.retry() } }
                 switch source {
                 case .forecast:

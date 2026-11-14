@@ -53,8 +53,10 @@ struct DiagnosticsScreenView: View {
     /// watchdog or jetsam termination) — loaded once when the screen appears.
     @State private var previousSession: String?
     /// Isolated self-test screens (navigation / forecast-scroll missions).
+    #if DEBUG
     @State private var showNavTest = false
     @State private var showScrollTest = false
+    #endif
 
     // Show at most the newest 80 events; the full trail goes to export.
     private var visibleEntries: [DiagLog.Entry] {
@@ -107,6 +109,8 @@ struct DiagnosticsScreenView: View {
             }
 
             // Isolated self-tests (navigation + forecast scroll missions).
+            // Debug-only: they exist to prove framework behaviour, not to ship.
+            #if DEBUG
             HStack(spacing: 12) {
                 Button {
                     Diag.event("diag nav self-test opened")
@@ -134,6 +138,7 @@ struct DiagnosticsScreenView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 Spacer()
             }
+            #endif
 
             // Controlled configurations A–E (mission Phase 4).
             VStack(alignment: .leading, spacing: 8) {
@@ -251,8 +256,10 @@ struct DiagnosticsScreenView: View {
                 refreshTick += 1
             }
         }
+        #if DEBUG
         .fullScreenCover(isPresented: $showNavTest) { NavTestView() }
         .fullScreenCover(isPresented: $showScrollTest) { ForecastIsolationView() }
+        #endif
     }
 
     private static func stamp(_ seconds: Double) -> String {

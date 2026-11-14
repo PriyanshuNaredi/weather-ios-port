@@ -16,6 +16,11 @@ actor DiskTileCache {
     private let directory: URL
     /// key → (file size in bytes, monotonically increasing last-use stamp).
     private var index: [String: (size: Int, stamp: UInt64)] = [:]
+    /// Running total of `index` sizes. Eviction is O(n log n) over the whole index,
+    /// and `store` used to run it after every tile write — a full copy and sort of
+    /// the index per tile while panning the map. The pass now runs only once the
+    /// budget is actually exceeded.
+    private var totalBytes = 0
     private var nextStamp: UInt64 = 1
     /// In-flight fetch dedupe: one Task per URL; awaiters share its result.
     private var inFlight: [String: Task<Data, Error>] = [:]
@@ -42,6 +47,7 @@ actor DiskTileCache {
         for file in sorted {
             let size = (try? file.url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
             index[file.url.lastPathComponent] = (size, nextStamp)
+            totalBytes += size
             nextStamp += 1
         }
     }
@@ -70,6 +76,7 @@ actor DiskTileCache {
             entries: entries, protected: protected, budgetBytes: TileCachePolicy.maxDiskBytes)
         for key in toDrop {
             try? FileManager.default.removeItem(at: fileURL(for: key))
+            totalBytes -= index[key]?.size ?? 0
             index[key] = nil
         }
         if !toDrop.isEmpty {
@@ -91,6 +98,7 @@ actor DiskTileCache {
         guard let data = try? Data(contentsOf: fileURL(for: key)), !data.isEmpty else {
             // Self-heal: the index and the file disagree — drop the stale entry.
             try? FileManager.default.removeItem(at: fileURL(for: key))
+            totalBytes -= index[key]?.size ?? 0
             index[key] = nil
             return nil
         }
@@ -137,16 +145,17 @@ actor DiskTileCache {
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try data.write(to: fileURL(for: key), options: .atomic)
+            totalBytes += data.count - (index[key]?.size ?? 0)
             index[key] = (data.count, nextStamp)
             nextStamp += 1
-            evictIfNeeded(protecting: [key])
+            if totalBytes > TileCachePolicy.maxDiskBytes {
+                evictIfNeeded(protecting: [key])
+            }
         } catch {
             Diag.event("tile disk cache write failed")
         }
     }
 
     /// Total cached bytes (diagnostics only).
-    func totalBytes() -> Int {
-        index.values.reduce(0) { $0 + $1.size }
-    }
+    func cachedBytes() -> Int { totalBytes }
 }

@@ -1,5 +1,7 @@
 import SwiftUI
 
+#if DEBUG
+
 // Navigation self-test (crash/navigation/scroll mission, Phase 3) — the
 // mission-required "isolated minimal SwiftUI navigation test screen with three
 // ordinary buttons and three separate destinations". Proves SwiftUI navigation
@@ -165,3 +167,4 @@ private struct NavTestDestination: View {
         .onAppear { Diag.event("navtest destination APPEARED -> \(route.rawValue)") }
     }
 }
+#endif

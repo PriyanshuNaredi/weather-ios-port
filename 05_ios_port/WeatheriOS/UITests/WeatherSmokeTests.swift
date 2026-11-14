@@ -60,6 +60,18 @@ final class WeatherSmokeTests: XCTestCase {
                       "cities screen did not render after nav")
     }
 
+    /// The `+` in the forecast header (iOS-only) opens the saved-cities screen,
+    /// whose search field adds another city.
+    func testAddCityButtonOpensSearch() {
+        let app = XCUIApplication.launchWithCity()
+
+        let add = app.buttons["Add city"]
+        XCTAssertTrue(add.waitForExistence(timeout: 20), "add-city control missing from the header")
+        add.tap()
+        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 10),
+                      "city search did not open from the add control")
+    }
+
     /// The diagnostics cover (runtime instrumentation surface). It now lives at
     /// the end of Settings: the bottom bar mirrors the Android layout, which has
     /// no diagnostics icon.
@@ -76,6 +88,28 @@ final class WeatherSmokeTests: XCTestCase {
         XCTAssertTrue(app.switches.firstMatch.waitForExistence(timeout: 10)
                       || app.buttons["Close"].waitForExistence(timeout: 5),
                       "diagnostics cover did not appear")
+    }
+
+    /// Regression test for the location timeout. `locateOnce` races a single fix
+    /// against an 18 s timer; the CLLocation child was not cancellation-aware, so
+    /// `withTaskGroup` waited for it forever and the timeout never fired. The flow
+    /// must now always end on its own: a fix ("My Location") or the failure text.
+    func testUseMyLocationTerminates() {
+        let app = XCUIApplication.weather()
+
+        let button = app.buttons["Use my location"]
+        XCTAssertTrue(button.waitForExistence(timeout: 25), "location button missing on empty state")
+        button.tap()
+
+        let fix = app.staticTexts["My Location"].firstMatch
+        let failure = app.staticTexts.containing(
+            NSPredicate(format: "label CONTAINS 'Location is unavailable'")).firstMatch
+        let deadline = Date().addingTimeInterval(35)
+        while Date() < deadline {
+            if fix.exists || failure.exists { return }
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        XCTFail("location flow never terminated — the 18 s timeout did not fire")
     }
 
     /// Cold-start stability: the app must stay in the foreground while idle.

@@ -1,5 +1,7 @@
 import SwiftUI
 
+#if DEBUG
+
 // Forecast-scroll self-test (crash/navigation/scroll mission, Phase 4) — the
 // mission-required isolated forecast-scrolling screen, tested independently of
 // the full application. Reproduces the exact layout combination the forecast
@@ -114,3 +116,4 @@ private struct TestPage: View {
         }
     }
 }
+#endif

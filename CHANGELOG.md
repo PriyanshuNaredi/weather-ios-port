@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## 2026-11-14 (evening) — `+` add-city control, ponytail audit, 6 fixes
+
+- **New:** `+` in the forecast header (iOS-only; Compose has no such control) opens the
+  saved-cities screen where search adds a city. Guarded by `testAddCityButtonOpensSearch`.
+- **Audit:** full repo audit with the [ponytail](https://github.com/DietrichGebert/ponytail)
+  ruleset (v5.3.3, installed project-locally in `.pi/settings.json`). Report in
+  `CODE_AUDIT.md`. Six findings fixed:
+  - **Must fix — permission request hang:** a second `ensureAuthorized()` call while the
+    dialog was pending stored its continuation without the lock and never requested
+    authorization, so it waited for a callback that had already been delivered.
+  - **Must fix — 18 s location timeout never fired:** the GPS child was not
+    cancellation-aware, so `withTaskGroup` waited for it forever; timed-out continuations
+    were leaked. Timeout now resolves through `withTaskCancellationHandler`.
+    New test: `testUseMyLocationTerminates`.
+  - **Perf — tile cache:** every stored tile re-built and re-sorted the whole disk index;
+    eviction now runs only when the byte budget is actually exceeded.
+  - **Bug — city identity:** GeoNames `id` is a number, so every city fell back to
+    `"lat,lon"` instead of Android's stringified id.
+  - **Lean — debug screens** (`NavTestView`, `ForecastIsolationView`, 283 lines) gated to
+    `#if DEBUG`; dead `legacyCartoBasemapTile` deleted.
+- Verified: 87 logic tests, 10 UI tests pass.
+
 ## 2026-11-14 (later) — Cosmetic parity overhaul: panels, bottom bar, grid
 
 Judged against the Compose source (`00_original/.../MainActivity.kt`), not against

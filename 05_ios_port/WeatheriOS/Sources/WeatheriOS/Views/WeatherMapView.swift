@@ -49,10 +49,6 @@ private func darkBasemapTile(_ z: Int, _ x: Int, _ y: Int) -> URL {
 }
 
 /// Kept for reference/tests: the original Linux-era basemap endpoint.
-private func legacyCartoBasemapTile(_ z: Int, _ x: Int, _ y: Int) -> URL {
-    URL(string: "https://basemaps.cartocdn.com/dark_all/\(z)/\(x)/\(y).png")!
-}
-
 /// Kotlin Maps.kt:74-88 `prepareMap` User-Agent — the map HTTP client carries a
 /// real application identity.
 private let mapUserAgent = "Weather/1.1.1 (https://github.com/Kian-hdr/Weather; dev.kiankonrad.weather)"

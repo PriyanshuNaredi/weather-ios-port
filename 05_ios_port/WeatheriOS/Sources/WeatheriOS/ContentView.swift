@@ -301,6 +301,7 @@ private struct ForecastPageHost: View {
                 viewModel.openMetric(weather, metric)
             },
             onMap: { viewModel.navigate(to: .map) },
+            onAddCity: { viewModel.navigate(to: .cities) },
             showMapPreview: DebugConfig.mapPreviews)
     }
 }

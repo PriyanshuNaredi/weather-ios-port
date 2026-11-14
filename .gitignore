@@ -83,3 +83,6 @@ credentials*.json
 05_ios_port/WeatheriOS/WeatheriOS.xcodeproj/
 05_ios_port/WeatheriOS/Support/Info.plist
 *.xcresult
+
+# --- ponytail (agent ruleset) package cache; .pi/settings.json is committed ---
+.pi/git/
