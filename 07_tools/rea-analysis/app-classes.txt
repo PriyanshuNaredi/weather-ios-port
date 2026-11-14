@@ -1,0 +1,25 @@
+total 43
+dev.kiankonrad.weather.AirQuality
+dev.kiankonrad.weather.City
+dev.kiankonrad.weather.ConditionSource
+dev.kiankonrad.weather.Conditions
+dev.kiankonrad.weather.DataCodec
+dev.kiankonrad.weather.DataKt
+dev.kiankonrad.weather.Day
+dev.kiankonrad.weather.DisplayClock
+dev.kiankonrad.weather.ForecastProjectionKt
+dev.kiankonrad.weather.Hour
+dev.kiankonrad.weather.MainActivity
+dev.kiankonrad.weather.MainActivityKt
+dev.kiankonrad.weather.MapRepository
+dev.kiankonrad.weather.MapsKt
+dev.kiankonrad.weather.Metric
+dev.kiankonrad.weather.ModelsKt
+dev.kiankonrad.weather.OpenWeatherRepository
+dev.kiankonrad.weather.R
+dev.kiankonrad.weather.RadarFrame
+dev.kiankonrad.weather.RadarTimeline
+dev.kiankonrad.weather.TemperatureGrid
+dev.kiankonrad.weather.TemperaturePoint
+dev.kiankonrad.weather.Weather
+dev.kiankonrad.weather.WeatherRepository

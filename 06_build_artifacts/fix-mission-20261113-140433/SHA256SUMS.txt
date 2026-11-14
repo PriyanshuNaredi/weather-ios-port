@@ -1,0 +1,13 @@
+# SHA256SUMS.txt — fix mission 2026-11-13 (crash/navigation/scroll fixes)
+# New artifacts of this mission (nothing below overwrites or replaces prior artifacts).
+
+25e404a21764279ea8e9292631a30fcfb72a17d164a1ffa524a8ef176693d3c1  weather-ios-unsigned/Weather-unsigned-FIXED-20261113-140433.ipa
+25e404a21764279ea8e9292631a30fcfb72a17d164a1ffa524a8ef176693d3c1  weather-ios-unsigned/Weather-unsigned-20261113-140433.ipa
+
+# Reference copies of the reports in this folder (self-check).
+# Pre-existing artifact hashes are recorded in fix2-baseline-20261113-133418/MANIFEST.txt
+# and were re-verified untouched:
+6a032f8aa5cd005a1f57fbd699ec2e41a77122645a59a867363d8f70a5a1231e  Weather-unsigned-20261113-115901.ipa (baseline, untouched)
+beb82eb893d7a2fc69381339187bc1630b12bf4ff13722245cb556679af59856  Weather-unsigned-20261113-130504.ipa (stability-fix, untouched)
+27057cbe67f100a851432ba02ffc95d056a8af0e081cc4cadeb658f4f3ce6baf  Weather-unsigned-20261113-132830.ipa (raw diagnostic, untouched)
+3b399e915b093acf6975fb77af00bc68cd96753dfce0f88ba17620150382782d  Weather-unsigned-FINAL-20261113-133010.ipa (previous FINAL, untouched)

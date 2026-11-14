@@ -1,0 +1,7 @@
+# SHA256SUMS — 06_build_artifacts/weather-ios-unsigned — 2026-11-13
+# Format: SHA-256  <filename>  (generated with sha256sum, MSYS line endings CRLF-safe)
+3b399e915b093acf6975fb77af00bc68cd96753dfce0f88ba17620150382782d  Weather-unsigned-FINAL-20261113-133010.ipa
+3b399e915b093acf6975fb77af00bc68cd96753dfce0f88ba17620150382782d  Weather-unsigned-20261113-133010.ipa
+27057cbe67f100a851432ba02ffc95d056a8af0e081cc4cadeb658f4f3ce6baf  Weather-unsigned-20261113-132830.ipa
+beb82eb893d7a2fc69381339187bc1630b12bf4ff13722245cb556679af59856  Weather-unsigned-20261113-130504.ipa
+6a032f8aa5cd005a1f57fbd699ec2e41a77122645a59a867363d8f70a5a1231e  Weather-unsigned-20261113-115901.ipa

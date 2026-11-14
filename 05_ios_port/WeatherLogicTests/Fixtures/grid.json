@@ -1,0 +1,12 @@
+{
+  "west": -10.0,
+  "south": 40.0,
+  "east": 10.0,
+  "north": 50.0,
+  "fetchedAt": 1731312000,
+  "points": [
+    { "lat": 40.0, "lon": -10.0, "temperature": 8.3, "time": 1731312000 },
+    { "lat": 40.0, "lon": -6.666666666666666, "temperature": null, "time": 0 },
+    { "lat": 40.0, "lon": -3.3333333333333335, "temperature": 9.1, "time": 1731312000 }
+  ]
+}

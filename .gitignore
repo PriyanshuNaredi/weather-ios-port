@@ -1,0 +1,80 @@
+# ============================================================
+# .gitignore — Weather iOS port project
+# Heavy local toolchains, binaries, caches and secrets are kept
+# out of Git. Nothing is deleted from disk by this file.
+# ============================================================
+
+# --- Local machine state / caches (never commit) ---
+.gradle-home/
+.gradle-home-wsl/
+.zcode/
+.gradle/
+.build/
+.swiftpm/
+build/
+DerivedData/
+node_modules/
+xcuserdata/
+*.xcuserstate
+.DS_Store
+Thumbs.db
+
+# --- Portable toolchains / SDKs / installs (downloaded, huge) ---
+01_android_build/
+02_apk_analysis/
+07_tools/android-sdk/
+07_tools/android-sdk-linux/
+07_tools/apktool/
+07_tools/jadx/
+07_tools/jdk-linux/
+07_tools/node-v24.22.1-win-x64/
+07_tools/rea-analysis/rea/
+07_tools/rea-analysis/review/
+07_tools/sdk-dl/
+07_tools/swift-linux/
+07_tools/xtool/
+
+# --- Downloaded archives / tool binaries / backups ---
+*.tar.gz
+*.zip
+*.jar
+!00_original/source/Weather/gradle/wrapper/gradle-wrapper.jar
+07_tools/rea-analysis/jadx-headless-mcp-0.7.1-all.jar
+*.bak
+
+# --- Build artifacts: binaries only (hashes/manifests ARE committed) ---
+*.ipa
+*.apk
+*.dSYM/
+06_build_artifacts/apk/
+06_build_artifacts/ipa/
+06_build_artifacts/hello-world-ios-binary/
+06_build_artifacts/unsigned-binaries/
+05_ios_port/build-output/
+*.bsp/
+.bsp/
+00_original/apk/
+00_original/checksums/*app-debug*
+
+# The reference Android source is a standalone clone; keep its object
+# database out of this repo (files themselves are committed).
+00_original/source/Weather/.git/
+
+# --- Raw build logs (verification MD/TXT/SHA256SUMS files are kept) ---
+*.log
+07_logs/
+06_build_artifacts/weather-ios-unsigned/package-log-*.txt
+06_build_artifacts/fix2-baseline-20261113-133418/logs-copy/
+
+# --- Secrets / signing material (defense in depth; none exist here) ---
+*.p12
+*.pem
+*.key
+*.cer
+*.der
+*.mobileprovision
+*.provisionprofile
+secrets*
+.env
+.env.*
+credentials*.json
