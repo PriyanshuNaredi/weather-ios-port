@@ -18,6 +18,10 @@ memory of the screenshots. Screenshot walk: `07_tools/visual-audit.sh` →
   The text labels the port had invented are gone, and the debug **info button that
   crowded Cities is removed from the bar** — diagnostics now lives at the end of
   Settings, since Android has no such control.
+- **Bottom bar is a real layout sibling again** — Kotlin's `Column { HorizontalPager(weight 1f)
+  ; Row(bar) }` means forecast content never runs under the bar. `.safeAreaInset` reserved the
+  space for the resting scroll position but still let rows scroll visibly behind the translucent
+  bar, so the bar is now a `VStack` sibling of the pager.
 - **Edge scrims added** (MainActivity.kt:159-160): `0x99112340` strips over the status
   and navigation bars as an overlay (not a `safeAreaInset`), matching Compose.
 - **Saved-cities list is no longer a `List`:** rows are `GlassPanel` cards in a 12 pt

@@ -35,7 +35,7 @@ xcodebuild test \
   -derivedDataPath "$DERIVED" \
   -resultBundlePath "$BUNDLE/audit.xcresult" \
   -only-testing:WeatheriOSUITests/VisualAuditTests \
-  CODE_SIGNING_ALLOWED=NO TEST_RUNNER_RUN_VISUAL_AUDIT=1 >"$BUNDLE/build.log" 2>&1
+  CODE_SIGNING_ALLOWED=NO >"$BUNDLE/build.log" 2>&1
 status=$?
 if [ $status -ne 0 ]; then
   echo "AUDIT RUN FAILED — tail of log:"
@@ -57,6 +57,12 @@ for test in m:
             continue
         shutil.move(src, os.path.join(out, name.split('_0_')[0] + '.png'))
 PY
+count=$(find "$OUT" -name '*.png' | wc -l | tr -d ' ')
+if [ "$count" -lt 8 ]; then
+  echo "FATAL: expected 8 screenshots, exported $count (attachments went to $BUNDLE/raw)"
+  ls -la "$BUNDLE" 2>/dev/null
+  exit 1
+fi
 rm -rf "$BUNDLE"
 ls "$OUT"
 echo "OK: audit screenshots in $OUT"

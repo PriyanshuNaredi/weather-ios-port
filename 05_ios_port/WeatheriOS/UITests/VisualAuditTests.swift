@@ -19,12 +19,10 @@ final class VisualAuditTests: XCTestCase {
         add(attachment)
     }
 
-    func testCaptureAllSurfaces() throws {
-        // Skipped in ordinary test runs (it asserts nothing, costs ~60 s and
-        // writes 8 screenshots). 07_tools/visual-audit.sh enables it with the
-        // TEST_RUNNER_-prefixed variable Xcode strips into the runner process.
-        try XCTSkipIf(ProcessInfo.processInfo.environment["RUN_VISUAL_AUDIT"] == nil,
-                      "run 07_tools/visual-audit.sh to capture screenshots")
+    // Excluded from ordinary runs by 07_tools/macos-tests.sh (-skip-testing):
+    // it asserts nothing, costs ~60 s and writes 8 screenshots. Run it through
+    // 07_tools/visual-audit.sh, which targets it with -only-testing.
+    func testCaptureAllSurfaces() {
         let app = XCUIApplication.weather()
 
         // 1. Empty state (city screen with the "Weather / Your day, at a glance." hero).

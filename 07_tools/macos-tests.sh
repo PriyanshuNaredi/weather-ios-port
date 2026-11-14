@@ -58,6 +58,7 @@ run_ui() {
     -sdk iphonesimulator \
     -destination "id=$UDID" \
     -derivedDataPath "$DERIVED" \
+    -skip-testing:WeatheriOSUITests/VisualAuditTests \
     CODE_SIGNING_ALLOWED=NO >"$log" 2>&1; then
     grep -E "Test Case '.*(passed|failed)|Executed [0-9]+ test" "$log" | tail -14
   else

@@ -178,10 +178,20 @@ private struct WeatherMainView: View {
     //    back for programmatic scrolls. No mirrored index state.
     //
     // Parity fix (§6.3, bottom bar): Android renders the bar as a Row sibling
-    // AFTER the pager inside the same Column — it can never be occluded. The
-    // bar is therefore attached as `.safeAreaInset(edge: .bottom)`: a layout
-    // sibling whose area page content always avoids, not an overlay.
+    // AFTER the pager inside the same Column, and the pager is a `weight(1f)`
+    // child — so forecast content never runs underneath the bar. This is now a
+    // plain `VStack` of pager + bar for the same reason. The previous shape was
+    // `.safeAreaInset(edge: .bottom)`: it reserved the bar's space for the final
+    // scroll position but still let content scroll visibly *behind* the
+    // translucent bar, which the Compose layout never does.
     private var weatherPager: some View {
+        VStack(spacing: 0) {
+            pagerPages
+            bottomBar
+        }
+    }
+
+    private var pagerPages: some View {
         ScrollView(.horizontal) {
             LazyHStack(spacing: 0) {
                 ForEach(viewModel.cities, id: \.id) { city in
@@ -199,7 +209,6 @@ private struct WeatherMainView: View {
                       let index = PagerPagePolicy.index(for: id, in: viewModel.cities) else { return }
                 viewModel.pagerMoved(to: index)
             }))
-        .safeAreaInset(edge: .bottom) { bottomBar }
     }
 
     // Kotlin lines 147-152 — bar `Row(background(Color(0xD9122E50)).padding(horizontal = 12.dp),
