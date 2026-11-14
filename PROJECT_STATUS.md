@@ -9,8 +9,8 @@
 | Cold start / search / forecast render | PASS — live Open-Meteo geocoding + forecast |
 | Map (basemap, radar, pan/pinch responsiveness) | PASS |
 | Settings, units switch, bundled legal texts | PASS |
-| Host logic suite | PASS 87/87 on the macOS toolchain |
-| Simulator UI suite | PASS 7/7 (`WeatheriOSUITests`) |
+| Host logic suite | PASS 87/87 on the macOS toolchain (59 XCTest + 28 swift-testing) |
+| Simulator UI suite | PASS 11/11 (`WeatheriOSUITests`, visual-audit class excluded) |
 | Idle CPU on the forecast screen | 5.7% (was 100% — invalidation loop, fixed) |
 | Physical device / signing | NOT DONE — no Apple ID/team in this environment |
 
@@ -19,6 +19,9 @@ Defects found and fixed during this build are listed in
 `ForecastPageModel.init` invalidation loop, O(n²) hourly dedup, `DateFormatter` churn,
 metric-grid layout feedback, Swift 6 strict-concurrency build failures, missing
 SwiftPM platform/toolchain settings).
+
+Port: Android APK → native iOS (SwiftUI) IPA — unsigned development build.
+Attribution and upstream projects: `CREDITS.md`.
 
 Project: Android Weather APK Reverse Engineering → Native iOS Port
 Root: `C:\Users\naredi\Downloads\Android Weather APK Reverse Engineering → Native iOS Port`

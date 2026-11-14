@@ -568,6 +568,9 @@ struct WeatherMapView: View {
     /// sits at the far right before the user has touched anything.
     @State private var autoPlayOnce = false
     @State private var grid: TemperatureGrid?
+    /// Frames (in map coordinates) of the overlay column and the control card, measured
+    /// so temperature badges never land under either of them.
+    @State private var chromeFrames: [CGRect] = []
     @State private var dirty = false
     @State private var radarLoading = false
     @State private var temperatureLoading = false
@@ -615,16 +618,20 @@ struct WeatherMapView: View {
                         if wide { Spacer(minLength: 0) }
                         topOverlay(width: overlayWidth)
                             .frame(maxWidth: overlayWidth, alignment: wide ? .leading : .center)
+                            .mapChromeFrame()
                     }
                     Spacer(minLength: 0)
                     HStack(alignment: .bottom, spacing: 0) {
                         bottomCard
                             .frame(maxWidth: overlayWidth, alignment: .center)
+                            .mapChromeFrame()
                         if wide { Spacer(minLength: 0) }
                     }
                 }
                 .padding(12)
+                .onPreferenceChange(MapChromeFrameKey.self) { chromeFrames = $0 }
             }
+            .coordinateSpace(name: MapChromeFrameKey.space)
             .onAppear {
                 camera.lastSize = geo.size
                 Diag.event("map screen appear (radar=\(DebugConfig.radarEnabled ? "on" : "off"))")
@@ -776,36 +783,57 @@ struct WeatherMapView: View {
 
     // Kotlin marker loop (Maps.kt:249-254) — every other row/column sample
     // gets a numeric label.
+    /// Badge positions for the temperature layer.
+    ///
+    /// The colour field is full-bleed (as in Kotlin), but numbering every other sample
+    /// on top of it made the map unreadable: badges were sliced by the screen edges and
+    /// buried behind the panels. A greedy pass now takes the best-spread few that sit
+    /// in clear space — away from the edges, the top overlay column, the bottom control
+    /// card and each other.
+    private func temperatureLabelPoints(_ grid: TemperatureGrid, size: CGSize) -> [(CGPoint, Double)] {
+        var placed: [CGPoint] = []
+        var result: [(CGPoint, Double)] = []
+        // Comfortable reading distance between badges; also keeps them clear of the city dot.
+        let minDX: CGFloat = 96
+        let minDY: CGFloat = 78
+        let edge: CGFloat = 34
+        let badge = CGSize(width: 46, height: 26)
+        // The city marker (blue dot + halo) sits at the centre of the viewport.
+        let cityPoint = camera.screenPoint(lat: city.latitude, lon: city.longitude, size: size)
+        let cityMarker = CGRect(x: cityPoint.x - 28, y: cityPoint.y - 28, width: 56, height: 56)
+        for point in grid.points {
+            guard let value = point.temperature else { continue }
+            let centre = camera.screenPoint(lat: point.latitude, lon: point.longitude, size: size)
+            let rect = CGRect(x: centre.x - badge.width / 2, y: centre.y - badge.height / 2,
+                              width: badge.width, height: badge.height)
+            guard rect.minX > edge, rect.maxX < size.width - edge,
+                  rect.minY > edge, rect.maxY < size.height - edge else { continue }
+            // Chrome is measured, not guessed: panels move with text size and locale.
+            if chromeFrames.contains(where: { $0.insetBy(dx: -10, dy: -10).intersects(rect) }) { continue }
+            if cityMarker.intersects(rect) { continue }
+            if placed.contains(where: { abs($0.x - centre.x) < minDX && abs($0.y - centre.y) < minDY }) {
+                continue
+            }
+            placed.append(centre)
+            result.append((centre, value))
+            if result.count == 5 { break }
+        }
+        return result
+    }
+
     @ViewBuilder
     private func temperatureLabels(_ grid: TemperatureGrid) -> some View {
         GeometryReader { geo in
-            // A badge is ~46×26 pt; the top overlay column and the bottom control
-            // panel cover roughly 210 / 180 pt of the map at this text size. Labels
-            // whose badge would be cut by an edge or hidden behind a panel are
-            // skipped — the Kotlin marker loop drew them anyway, which read as
-            // half-visible numbers scattered at the borders.
-            let halfWidth: CGFloat = 30
-            // Panels cover the top and bottom strips; keep a margin above them.
-            let topInset: CGFloat = 160
-            let bottomInset: CGFloat = 150
-            ForEach(Array(grid.points.enumerated()), id: \.offset) { n, p in
-                // Kotlin labels every other sample; that rule no longer holds once
-                // edge/panel samples are dropped (it left only two badges), so the
-                // checkerboard parity keeps roughly the same density instead.
-                if p.temperature != nil, (n / 7 + n % 7) % 2 == 0,
-                   case let point = camera.screenPoint(lat: p.latitude, lon: p.longitude, size: geo.size),
-                   point.x > halfWidth, point.x < geo.size.width - halfWidth,
-                   point.y > topInset, point.y < geo.size.height - bottomInset {
-                    Text(temp(p.temperature, imperial: imperial))
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .background(Color(red: 22 / 255, green: 43 / 255, blue: 67 / 255)
-                            .opacity(210.0 / 255.0))
-                        .clipShape(RoundedRectangle(cornerRadius: 9))
-                        .position(point)
-                }
+            ForEach(Array(temperatureLabelPoints(grid, size: geo.size).enumerated()), id: \.offset) { _, item in
+                Text(temp(item.1, imperial: imperial))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(Color(red: 22 / 255, green: 43 / 255, blue: 67 / 255)
+                        .opacity(210.0 / 255.0))
+                    .clipShape(RoundedRectangle(cornerRadius: 9))
+                    .position(item.0)
             }
         }
         .allowsHitTesting(false)
@@ -1085,6 +1113,9 @@ struct WeatherMapView: View {
             Diag.event("temperature load already in flight — skipped duplicate")
             return
         }
+        // Kotlin samples the whole viewport (Maps.kt:245-247 FillLayer). Keeping the
+        // colour field full-bleed is deliberate: a capped box read as a half-drawn
+        // overlay. Only the numeric badges are thinned out (temperatureLabelPoints).
         let bounds = camera.visibleBounds(size: size)
         temperatureLoading = true
         temperatureError = nil
@@ -1106,6 +1137,33 @@ struct WeatherMapView: View {
         }
         Diag.event("temperature grid load started")
     }
+}
+
+// MARK: - Chrome measurement (temperature badge avoidance)
+
+/// Collects the frames of map chrome so numeric badges can avoid them. Edited text
+/// size, locale and the wet/dry legend all change the panel heights, so a hard-coded
+/// inset would drift.
+struct MapChromeFrameKey: PreferenceKey {
+    static let space = "mapArea"
+    static var defaultValue: [CGRect] { [] }
+    static func reduce(value: inout [CGRect], nextValue: () -> [CGRect]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
+private struct MapChromeFrameModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content.background(
+            GeometryReader { proxy in
+                Color.clear.preference(key: MapChromeFrameKey.self,
+                                       value: [proxy.frame(in: .named(MapChromeFrameKey.space))])
+            })
+    }
+}
+
+extension View {
+    func mapChromeFrame() -> some View { modifier(MapChromeFrameModifier()) }
 }
 
 // MARK: - Temperature fill overlay (Kotlin FillLayer .42, Maps.kt:245-247)

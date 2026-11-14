@@ -92,6 +92,8 @@ struct SettingsScreenView: View {
                         linkRow("Open-Meteo", "https://open-meteo.com/")
                         linkRow("RainViewer", "https://www.rainviewer.com/")
                         linkRow("OpenStreetMap contributors", "https://www.openstreetmap.org/copyright")
+                        linkRow("Esri World Dark Gray (basemap)",
+                                "https://www.esri.com/en-us/arcgis/products/arcgis-online/overview")
                         linkRow("OpenFreeMap", "https://openfreemap.org/")
                         linkRow("OpenMapTiles style credits and license",
                                 "https://github.com/openmaptiles/dark-matter-gl-style/blob/master/LICENSE.md")

@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 2026-11-14 (map + docs) — full-bleed temperature colours, few clean badges, credits
+
+- **Temperature layer:** the colour field is full-bleed again (whole viewport, as Kotlin's
+  `FillLayer`). Only the numeric badges are thinned: at most five, greedily spread, never
+  within 34 pt of an edge, never under the top overlay column or the bottom control card,
+  and never on the city marker. Chrome is **measured** (`MapChromeFrameKey`) rather than
+  assumed, because the panels change height with text size and locale.
+- **Reverted:** the ±4° sampling cap added earlier today. It shrank the range to 8–25 °C,
+  but left the shading as a rectangle over a quarter of the screen, which read as a
+  half-drawn overlay. `TemperatureSampleBox` and its two tests are gone.
+- **Attribution:** new `CREDITS.md` (every upstream project, its license, what it provides,
+  and shout-outs); README rewritten with the APK → IPA status and a short "what differs"
+  table; in-app attribution gained an Esri World Dark Gray link.
+- Verified: 87 logic tests (59 XCTest + 28 swift-testing), 11 UI tests; temperature screen
+  captured and read back — colours across the map, five unobstructed badges.
+
 ## 2026-11-14 (map) — temperature badges no longer clipped or buried
 
 - **Fix:** the temperature layer drew a badge at every other grid sample regardless of where
