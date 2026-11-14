@@ -35,8 +35,21 @@ private let MapInk = Color(red: 0xE1 / 255, green: 0xEC / 255, blue: 0xFA / 255)
 
 /// Kotlin Maps.kt:90 — the dark basemap identity. The Android app loads the
 /// OpenFreeMap `dark` style (a MapLibre port of CARTO dark-matter); the iOS
-/// port fetches the same dark-matter cartography as raster tiles.
+/// port fetches the same cartography as raster tiles.
+///
+/// macOS-build fix: the CARTO dark-matter raster endpoint used by the Linux
+/// pipeline (`basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png`) now answers 200
+/// with a placeholder PNG reading "API KEY REQUIRED" for keyless requests, so
+/// the map rendered as a grid of watermarks. Esri's dark-gray canvas serves the
+/// same role (dark, label-light reference map) with no key and no attribution
+/// change beyond the credit line.
 private func darkBasemapTile(_ z: Int, _ x: Int, _ y: Int) -> URL {
+    // Esri tile scheme is {z}/{row}/{col} — note the y/x order.
+    URL(string: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/\(z)/\(y)/\(x)")!
+}
+
+/// Kept for reference/tests: the original Linux-era basemap endpoint.
+private func legacyCartoBasemapTile(_ z: Int, _ x: Int, _ y: Int) -> URL {
     URL(string: "https://basemaps.cartocdn.com/dark_all/\(z)/\(x)/\(y).png")!
 }
 
@@ -1116,8 +1129,8 @@ struct MapAttribution: View {
                         .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
                 }
             }
-            Link("Dark map: OpenFreeMap · © OpenMapTiles",
-                 destination: URL(string: "https://openmaptiles.org/")!)
+            Link("Dark map: Esri World Dark Gray · © OpenStreetMap contributors",
+                 destination: URL(string: "https://www.esri.com/en-us/arcgis/products/arcgis-online/overview")!)
                 .font(.system(size: 11))
                 .foregroundStyle(MapInk)
                 .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)

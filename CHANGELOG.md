@@ -1,5 +1,46 @@
 # CHANGELOG
 
+## 2026-11-14 — First macOS/Xcode build: project generated, defects fixed, 94 tests green
+
+Mission: get the port actually building and working on the Hackintosh (macOS 15.5,
+Xcode 16.0, iOS 18 SDK). No Xcode project had ever existed — every prior build ran on
+Linux via `xtool`/SwiftPM. Full detail: `05_ios_port/MACOS_VERIFICATION.md`.
+
+- **Build system:** added `05_ios_port/WeatheriOS/project.yml` (XcodeGen) as the macOS
+  build definition — app target with bundle id `dev.kiankonrad.weather` 1.1.1 (6), iOS 17
+  deployment, location usage string, `legal/` as a **folder reference** (SwiftPM `.copy`
+  semantics) in `Support/Info.plist`. Generated `.xcodeproj`/plist are gitignored.
+- **New scripts:** `07_tools/macos-build.sh` (generate → build → install → launch),
+  `07_tools/macos-tests.sh` (host logic + simulator UI layers).
+- **New test target (7 XCUITest cases):** `UITests/WeatherSmokeTests.swift`,
+  `UITests/WeatherSurfacesTests.swift`, `UITests/UITestSupport.swift` — live geocoding,
+  forecast render, bottom-bar nav, map pan/pinch responsiveness (watchdog scenario),
+  settings/units, bundled legal texts, metric detail, second-city pager.
+- **Test seam:** `-resetState` launch argument clears the `weather` defaults suite and
+  the app-support caches so UI tests start from the documented empty state.
+- **Fix (100% CPU / UI stall):** `ForecastPageModel.init` forwarded the cached snapshot
+  via `onWeather`; because SwiftUI re-creates the struct on every parent body pass, each
+  pass wrote into the shared `WeatherViewModel` and re-invalidated the parent — a ~22 Hz
+  invalidation loop (idle CPU 100%, XCTest accessibility snapshots timing out on any
+  scrolled forecast). Forward now happens once via `forwardInitialWeather()` in `.task`.
+  Idle CPU 100% → 5.7%.
+- **Fix (basemap):** CARTO `dark_all` raster now returns an "API KEY REQUIRED" placeholder
+  for keyless requests; switched to Esri World Dark Gray Canvas (keyless). Attribution
+  strings updated in the map footer and settings screen.
+- **Fix (units switch):** the Settings `Toggle` never fired its setter on this SDK
+  (verified: no `units ->` event at any hit point while buttons worked). Replaced with a
+  Button + capsule indicator, matching the Material switch and giving a 44 pt target.
+- **Fix (performance):** `Array.uniqued` was O(n²) over 240 hourly points and is called
+  per metric tile per layout pass → `Set`; `localTime` and `DisplayClock.uses24Hour`
+  no longer allocate a `DateFormatter` per call; metric-grid width measurement is
+  quantised so the column count can no longer self-invalidate layout.
+- **Fix (toolchain):** app target builds in Swift 5 language mode (Swift 6 mode rejected
+  `DiagLog`'s `mach_task_self_` read and `WeatherMapView`'s `inFlight` mutation — both
+  Darwin-only paths the Linux build never compiled). `WeatherLogicTests/Package.swift`
+  gains `.macOS(.v14)` and `swiftLanguageModes: [.v5]`.
+- **Verified:** 87/87 host logic tests on the macOS toolchain; 7/7 simulator UI tests;
+  screenshots in `07_logs/shots/` (basemap, forecast, settings, legal, metric detail).
+
 ## 2026-11-13 — Android↔iOS architectural parity build (PARITY IPA)
 
 Mission: implement the 8 parity corrections documented in

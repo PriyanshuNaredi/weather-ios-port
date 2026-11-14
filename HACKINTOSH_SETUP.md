@@ -20,40 +20,48 @@ cd weather-ios-port
 
 | Requirement | Verified on the publishing machine | Recommended |
 |---|---|---|
-| macOS + Xcode | **NOT verified** — all builds so far ran on Linux (WSL) via `xtool`/SwiftPM; no Xcode/macOS build has ever been run | Xcode 15+ with iOS SDK |
+| macOS + Xcode | **VERIFIED 2026-11-14** on Xcode 16.0 / iOS 18.0 SDK (macOS 15.5 x86_64), simulator only — see `05_ios_port/MACOS_VERIFICATION.md` | Xcode 16+ with iOS 18 SDK |
 | Swift | SwiftPM logic tests were built with a **Linux** Swift toolchain (verified on Linux only) | The Swift toolchain bundled with Xcode |
 | Signing/provisioning | None exists in the repo — **must be configured locally on the Hackintosh** | Xcode-managed signing with your Apple ID / dev cert |
 
-> ⚠️ **Everything macOS-related below is unverified.** The iOS app was
-> compiled cross-platform on Linux (`05_ios_port/WeatheriOS`, SwiftPM layout,
-> no .xcodeproj is committed). Opening it in Xcode and building has never
-> been tested — expect to create an Xcode project or use an SPM-to-Xcode
-> bridge and allow build-setting adjustments.
+> ✅ **macOS build verified 2026-11-14.** The app compiles, installs and runs on an
+> iOS 18 simulator, and the host + simulator test suites pass (87 + 7). Signing,
+> device install and the on-device watchdog check (§7) are still outstanding.
 
-## 3. Open the project in Xcode (unverified)
+## 3. Build and run on macOS — VERIFIED (2026-11-14, Xcode 16.0 / iOS 18 SDK)
 
-There is no `.xcodeproj`/`.xcworkspace` in the repo (the Linux pipeline used
-SwiftPM + `xtool`). Options, in order of least effort:
-
-1. Create a new iOS App project in Xcode and add
-   `05_ios_port/WeatheriOS/Sources/WeatheriOS` as source (bundle id
-   `dev.kiankonrad.weather`, version 1.1.1 — see below), or
-2. Use `xcodebuild` / an XcodeGen/Tuist spec you write locally.
-
-Marked unverified because neither path has been exercised on macOS.
-
-## 4. Run the logic tests (verified pattern on Linux; unverified on macOS)
-
-The tests are a SwiftPM package:
+No longer needs an "option": the repo now ships an XcodeGen spec and two scripts.
 
 ```bash
-cd 05_ios_port/WeatherLogicTests
-swift test
+brew install xcodegen
+./07_tools/macos-build.sh          # generate project, build, install, launch on simulator
+./07_tools/macos-tests.sh          # 87 host logic tests + 7 simulator UI tests
 ```
 
-Expected: **87/87 pass** (59 XCTest + 28 Swift Testing) — verified on the
-Linux toolchain (`07_tools/logic-tests.sh`). On macOS run from the Xcode
-toolchain this should be identical, but it has not been run there.
+- `05_ios_port/WeatheriOS/project.yml` is the build definition; `xcodegen generate`
+  writes `WeatheriOS.xcodeproj` + `Support/Info.plist` (both gitignored).
+- If `xcode-select -p` still reports CommandLineTools (as on this machine, where
+  `sudo` needs a password), do not switch it: the scripts export
+  `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` instead.
+- The app target builds in **Swift 5 language mode** (`SWIFT_VERSION 5.0`). Swift 6
+  mode turns two Darwin-only diagnostics into errors (`DiagLog`'s `mach_task_self_`
+  read and `WeatherMapView`'s `inFlight` mutation) — neither was ever compiled by the
+  Linux toolchain.
+- UI target: `WeatheriOSUITests` (XCTest, `UITests/`), run on any iOS 18 simulator.
+  `-resetState` is passed by the tests to start from the empty state.
+
+## 4. Logic tests on macOS — VERIFIED
+
+```bash
+./07_tools/macos-tests.sh logic    # or: ./07_tools/macos-tests.sh all
+```
+
+Expected and measured: **87/87 pass** (59 XCTest + 28 Swift Testing) with the macOS
+toolchain; the package now declares `.macOS(.v14)` and `swiftLanguageModes: [.v5]`,
+both required on macOS (without them `swift test` fails to build).
+
+See `05_ios_port/MACOS_VERIFICATION.md` for the full verified-surface table and the
+eight defects found during this build.
 
 ## 5. Bundle identity / version (parity with the Android original)
 

@@ -216,7 +216,21 @@ final class ForecastPageModel {
         self.repository = repository
         self.onWeather = onWeather
         weather = repository.cached(city: city)
-        if let weather { onWeather(weather) }   // Kotlin `old?.let(onWeather)`
+        // NOTE (macOS-build fix): Kotlin's `old?.let(onWeather)` runs once per
+        // composition; calling it from `init` here was NOT equivalent. SwiftUI
+        // re-creates the view struct (and therefore this model) on every parent
+        // body pass, so the callback wrote into the shared WeatherViewModel from
+        // inside `init`, invalidating the parent again — a self-sustaining
+        // invalidation loop measured at ~22 body renders/second and 100% CPU on
+        // an idle forecast screen. The forward now happens in
+        // `forwardInitialWeather()`, called once from the page's `.task`.
+    }
+
+    /// Kotlin `MainActivity.kt:174` `old?.let(onWeather)` — forward the cached
+    /// snapshot to the shared app state. Called from the view's one-shot `.task`,
+    /// never from `init` (see the note there).
+    func forwardInitialWeather() {
+        if let weather { onWeather(weather) }
     }
 
     /// Kotlin `LaunchedEffect(city.id, lat, lon, tick)` (lines 180-189):

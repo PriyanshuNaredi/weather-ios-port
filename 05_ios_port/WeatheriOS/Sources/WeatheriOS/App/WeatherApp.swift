@@ -12,8 +12,24 @@ struct WeatherApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        // Test seam: `-resetState` runs before the repository is constructed so a
+        // UI test always starts from the same empty state (Android equivalent:
+        // clearing SharedPreferences + cacheDir before an instrumented test).
+        Self.resetStateIfRequested()
         environment = AppEnvironment(repository: OpenWeatherRepository())
         Diag.event("app init (diagnostic build)")
+    }
+
+    /// Clears persisted cities/units and the on-disk forecast/tile caches when the
+    /// `-resetState` launch argument is present. No effect in normal launches.
+    private static func resetStateIfRequested() {
+        guard ProcessInfo.processInfo.arguments.contains("-resetState") else { return }
+        UserDefaults(suiteName: "weather")?.removePersistentDomain(forName: "weather")
+        UserDefaults.standard.synchronize()
+        if let base = FileManager.default.urls(for: .applicationSupportDirectory,
+                                               in: .userDomainMask).first {
+            try? FileManager.default.removeItem(at: base)
+        }
     }
 
     var body: some Scene {

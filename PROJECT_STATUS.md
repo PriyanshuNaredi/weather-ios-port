@@ -1,5 +1,25 @@
 # PROJECT_STATUS.md
 
+## macOS/Xcode build status — VERIFIED 2026-11-14
+
+| Item | Status |
+|---|---|
+| Xcode project | Generated from `05_ios_port/WeatheriOS/project.yml` (XcodeGen) |
+| Simulator build (iOS 18 SDK, Xcode 16.0) | PASS — `07_tools/macos-build.sh` |
+| Cold start / search / forecast render | PASS — live Open-Meteo geocoding + forecast |
+| Map (basemap, radar, pan/pinch responsiveness) | PASS |
+| Settings, units switch, bundled legal texts | PASS |
+| Host logic suite | PASS 87/87 on the macOS toolchain |
+| Simulator UI suite | PASS 7/7 (`WeatheriOSUITests`) |
+| Idle CPU on the forecast screen | 5.7% (was 100% — invalidation loop, fixed) |
+| Physical device / signing | NOT DONE — no Apple ID/team in this environment |
+
+Defects found and fixed during this build are listed in
+`05_ios_port/MACOS_VERIFICATION.md` (basemap 200-with-watermark, inert units switch,
+`ForecastPageModel.init` invalidation loop, O(n²) hourly dedup, `DateFormatter` churn,
+metric-grid layout feedback, Swift 6 strict-concurrency build failures, missing
+SwiftPM platform/toolchain settings).
+
 Project: Android Weather APK Reverse Engineering → Native iOS Port
 Root: `C:\Users\naredi\Downloads\Android Weather APK Reverse Engineering → Native iOS Port`
 Last updated: 2026-11-13

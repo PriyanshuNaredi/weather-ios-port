@@ -59,7 +59,9 @@ func atTime(_ weather: Weather, now: Int) -> Weather {
 
 /// A modeled hourly value at this exact instant, or nil when the cached horizon does not cover it.
 func forecastHourAt(_ weather: Weather, now: Int) -> Hour? {
-    let ordered = weather.hours.sorted { $0.time < $1.time }.uniqued { $0.time }
+    let ordered = weather.hours.isNonDecreasing(\.time)
+        ? weather.hours.uniqued { $0.time }
+        : weather.hours.sorted { $0.time < $1.time }.uniqued { $0.time }
     if let exact = ordered.first(where: { $0.time == now }) { return exact }
     let rightIndex = ordered.firstIndex { $0.time > now } ?? -1
     if rightIndex <= 0 { return nil }
@@ -130,13 +132,33 @@ private func parseLocalDate(_ string: String) -> String? {
 
 private extension Array {
     /// Kotlin `distinctBy` on a key selector.
-    func uniqued<Key: Equatable>(_ key: (Element) -> Key) -> [Element] {
-        var seen: [Key] = []
-        return filter { element in
-            let k = key(element)
-            if seen.contains(k) { return false }
-            seen.append(k)
-            return true
+    ///
+    /// macOS-build fix: this used `Array.contains` per element (O(n²)). With 240
+    /// hourly points it is called once per metric tile on every layout pass
+    /// (`metricValue` -> `nearest` -> `forecastHourAt` -> `uniqued`), which
+    /// saturated the main thread for tens of seconds — sampled live, and the
+    /// reason XCTest's accessibility snapshot timed out on the metric grid.
+    /// Set membership makes it O(n); order and results are unchanged.
+    func uniqued<Key: Hashable>(_ key: (Element) -> Key) -> [Element] {
+        var seen = Set<Key>()
+        seen.reserveCapacity(count)
+        var result: [Element] = []
+        result.reserveCapacity(count)
+        for element in self where seen.insert(key(element)).inserted {
+            result.append(element)
         }
+        return result
+    }
+
+    /// True when the elements are already ordered by `key` (avoids re-sorting the
+    /// hourly forecast on every lookup).
+    func isNonDecreasing<Key: Comparable>(_ key: (Element) -> Key) -> Bool {
+        var previous: Key?
+        for element in self {
+            let current = key(element)
+            if let previous, previous > current { return false }
+            previous = current
+        }
+        return true
     }
 }

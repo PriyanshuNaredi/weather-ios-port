@@ -122,11 +122,15 @@ struct ScreenHeader: View {
 /// Kotlin `android.text.format.DateFormat.is24HourFormat(context)` decides the
 /// pattern; iOS equivalent reads the locale's "j" template for an AM/PM marker.
 enum DisplayClock {
-    static var uses24Hour: Bool {
+    /// Cached because it allocates a `DateFormatter` for the locale template and
+    /// is read per hourly label on every layout pass (see `localTime`).
+    private static let cachedUses24Hour: Bool = {
         let template = DateFormatter.dateFormat(fromTemplate: "j", options: 0,
                                                 locale: Locale.current) ?? "HH:mm"
         return !template.contains("a")
-    }
+    }()
+
+    static var uses24Hour: Bool { cachedUses24Hour }
 
     /// Kotlin `DisplayClock.pattern` — "HH:mm" (24 h) or "h:mm a" (12 h).
     static var pattern: String { uses24Hour ? "HH:mm" : "h:mm a" }

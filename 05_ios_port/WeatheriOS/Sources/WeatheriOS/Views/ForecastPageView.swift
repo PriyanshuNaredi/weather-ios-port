@@ -56,6 +56,10 @@ struct ForecastPageView: View {
         // page at all (distinguishes "gesture intercepted above" from
         // "gesture works but scroll doesn't move").
         .onAppear { Diag.event("forecast page appear") }
+        // One-shot forward of the cached snapshot to the shared app state
+        // (Kotlin `LaunchedEffect(city.id) { old?.let(onWeather) }`). Must not
+        // live in ForecastPageModel.init — see the note there.
+        .task { model.forwardInitialWeather() }
         .onDisappear { Diag.event("forecast page disappear") }
         // Stability fix: the previous `.simultaneousGesture(DragGesture)` diagnostic
         // monitor sat on the page alongside the pager's drag handling; even an
@@ -317,7 +321,19 @@ struct ForecastPageView: View {
                     value: geo.size.width)
             }
         )
-        .onPreferenceChange(MetricGridWidthKey.self) { gridWidth = $0 }
+        .onPreferenceChange(MetricGridWidthKey.self) { newWidth in
+            // Layout-loop guard. `columns` is derived from this measured width,
+            // so a sub-point change across the 330 pt threshold re-lays out the
+            // grid, which re-measures, which flips the column count again — an
+            // infinite SwiftUI invalidation loop (observed on the iOS 24A3351
+            // simulator: main thread pinned at 100% in
+            // ViewGraphDelegate.updateGraph, XCTest accessibility snapshots
+            // timing out, and the forecast unusable after scrolling to the grid).
+            // Quantising to 10 pt plus a 10 pt dead band makes the measurement
+            // settle: tiny rounding differences can no longer change the result.
+            let quantised = (newWidth / 10).rounded() * 10
+            if abs(quantised - gridWidth) >= 10 { gridWidth = quantised }
+        }
     }
 
     /// Width of the metric-tile grid, measured without stealing vertical space.

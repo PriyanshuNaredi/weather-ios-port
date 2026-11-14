@@ -78,3 +78,8 @@ secrets*
 .env
 .env.*
 credentials*.json
+
+# --- XcodeGen output + Xcode local state (regenerate with `xcodegen generate`) ---
+05_ios_port/WeatheriOS/WeatheriOS.xcodeproj/
+05_ios_port/WeatheriOS/Support/Info.plist
+*.xcresult

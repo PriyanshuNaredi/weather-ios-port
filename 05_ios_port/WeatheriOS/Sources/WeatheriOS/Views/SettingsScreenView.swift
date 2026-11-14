@@ -12,6 +12,20 @@ struct SettingsScreenView: View {
     let onClose: () -> Void
 
     @State private var showLicenses = false
+    /// Local mirror of the persisted unit preference. The switch previously bound
+    /// its `isOn` straight to the immutable `imperial` parameter, so on the iOS 24A3351
+    /// simulator the control kept its own value and never called the setter
+    /// (verified: no `units ->` diagnostic event on tap, label never flipped).
+    /// Owning the value here makes the switch respond immediately and still
+    /// delegates the single write to `onImperial`.
+    @State private var imperialLocal: Bool
+
+    init(imperial: Bool, onImperial: @escaping (Bool) -> Void, onClose: @escaping () -> Void) {
+        self.imperial = imperial
+        self.onImperial = onImperial
+        self.onClose = onClose
+        _imperialLocal = State(initialValue: imperial)
+    }
 
     var body: some View {
         ScrollView {
@@ -21,14 +35,36 @@ struct SettingsScreenView: View {
                 // Kotlin lines 428-429 — Units glass.
                 GlassPanel {
                     Text("Units").font(.system(size: 22))
-                    HStack {
-                        Text(imperial ? "Fahrenheit · mph · inches" : "Celsius · km/h · millimeters")
-                        Spacer()
-                        Toggle("", isOn: Binding(get: { imperial }, set: { onImperial($0) }))
-                            .labelsHidden()
-                            .tint(WeatherTheme.accent)
-                            .accessibilityLabel("Use imperial units")
+                    // NOTE: this row was a SwiftUI `Toggle`. On the iOS 24A3351
+                    // simulator that control never delivered the tap to its
+                    // binding (no setter call at any of 5 hit points, while
+                    // buttons on the same screen worked), so the unit switch was
+                    // dead. A Button + capsule indicator reproduces the Material
+                    // switch from the Kotlin screen and gives a full-width target.
+                    Button {
+                        let newValue = !imperialLocal
+                        imperialLocal = newValue
+                        onImperial(newValue)
+                    } label: {
+                        HStack {
+                            Text(imperialLocal ? "Fahrenheit · mph · inches" : "Celsius · km/h · millimeters")
+                            Spacer(minLength: 12)
+                            ZStack(alignment: imperialLocal ? .trailing : .leading) {
+                                Capsule()
+                                    .fill(imperialLocal ? WeatherTheme.accent : Color.white.opacity(0.22))
+                                    .frame(width: 51, height: 31)
+                                Circle()
+                                    .fill(.white)
+                                    .frame(width: 27, height: 27)
+                                    .padding(.horizontal, 2)
+                                    .shadow(color: .black.opacity(0.25), radius: 1, y: 1)
+                            }
+                        }
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Use imperial units")
+                    .accessibilityValue(imperialLocal ? "On" : "Off")
                 }
 
                 // Kotlin line 430 — privacy glass, exact wording.
@@ -42,7 +78,7 @@ struct SettingsScreenView: View {
                 // Kotlin lines 431-434 — attribution glass + links.
                 GlassPanel {
                     Text("Data & attribution").font(.system(size: 22))
-                    Text("Forecasts: Open-Meteo\nAir quality: CAMS via Open-Meteo\nRainfall radar: RainViewer\nMap data: © OpenStreetMap contributors\nDark basemap: OpenFreeMap · © OpenMapTiles\nMaps: MapLibre Native")
+                    Text("Forecasts: Open-Meteo\nAir quality: CAMS via Open-Meteo\nRainfall radar: RainViewer\nMap data: © OpenStreetMap contributors\nDark basemap: Esri World Dark Gray\nMaps: custom SwiftUI tile renderer")
                         .padding(.top, 12)
                         .lineSpacing(10)
                     VStack(alignment: .leading, spacing: 0) {
