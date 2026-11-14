@@ -101,3 +101,19 @@ Every screen was re-checked against the Compose source and re-captured with
 | Headers / links | small hit targets | 44 pt targets matching Material `IconButton`/`TextButton` |
 
 `VisualAuditTests` is skipped in normal runs; the suite reports `1 skipped`.
+
+## Later same day — chrome, behaviour, audit, identity
+
+| Area | Change | Evidence |
+|---|---|---|
+| Page indicator | dots were centred in the leftover bar gap (172.5 pt vs 196.5 pt) — 24 pt left of centre; now an overlay centred on the full bar width | `testPageIndicatorIsCentred` (midX within 1.0 pt) |
+| Add city | explicit `+` on the forecast header, 44 pt, wired to the Cities tab | `testAddCityButtonOpensSearch` |
+| Radar playback | opened parked on the newest frame with nothing playing, which reads as "already played"; now opens on the oldest frame and plays the window once (~13 frames, 10 s), stopping at "now" | `testRadarPlaysOnceFromTheStartWhenMapOpens`; session log frames 2/13→13/13 then silence |
+| Temperature colours | full-bleed over the whole viewport (Kotlin `FillLayer`); a capped sample box was tried and reverted because the shading read as half-drawn | `audit-10-map-temperature` |
+| Temperature badges | at most five, greedily spaced (96×78 pt), ≥34 pt from edges, excluded from the measured top/bottom panel frames and the city marker | same capture: 5 badges, none clipped or overlapped |
+| Repo audit | two `LocationFinder` hangs, `DiskTileCache` index re-sort per tile, GeoNames numeric `id`, dead code gated/removed | `CODE_AUDIT.md`, `testUseMyLocationTerminates` |
+| App icon | rendered from the APK's `ic_weather_foreground.xml` vector; the target had an empty `ASSETCATALOG_COMPILER_APPICON_NAME`, so no icon ever compiled | `Assets.car` in the bundle; home-screen capture in `07_logs/shots/icon-on-home.png` |
+| Attribution | Settings footer names the iOS port author and keeps "Based on Weather for Android by Kian Konrad (MIT)"; `CREDITS.md` lists every upstream project | `audit-06-settings-bottom` |
+
+Suites at this point: 87 logic tests (59 XCTest + 28 swift-testing) and 11 UI tests pass;
+`VisualAuditTests` is skipped in normal runs (1 skipped).

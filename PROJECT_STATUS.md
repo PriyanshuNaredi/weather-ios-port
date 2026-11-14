@@ -9,6 +9,8 @@
 | Cold start / search / forecast render | PASS — live Open-Meteo geocoding + forecast |
 | Map (basemap, radar, pan/pinch responsiveness) | PASS |
 | Settings, units switch, bundled legal texts | PASS |
+| Visual audit walk (10 screens) | PASS — `07_tools/visual-audit.sh` → `07_logs/shots/audit/` |
+| App icon (`Assets.car` in bundle, home screen) | PASS — rendered from the APK's own vector |
 | Host logic suite | PASS 87/87 on the macOS toolchain (59 XCTest + 28 swift-testing) |
 | Simulator UI suite | PASS 11/11 (`WeatheriOSUITests`, visual-audit class excluded) |
 | Idle CPU on the forecast screen | 5.7% (was 100% — invalidation loop, fixed) |
@@ -18,14 +20,19 @@ Defects found and fixed during this build are listed in
 `05_ios_port/MACOS_VERIFICATION.md` (basemap 200-with-watermark, inert units switch,
 `ForecastPageModel.init` invalidation loop, O(n²) hourly dedup, `DateFormatter` churn,
 metric-grid layout feedback, Swift 6 strict-concurrency build failures, missing
-SwiftPM platform/toolchain settings).
+SwiftPM platform/toolchain settings, `GlassPanel` painting children as separate cards,
+radar opening on the newest frame, temperature badges clipped by edges and panels, empty
+`ASSETCATALOG_COMPILER_APPICON_NAME`).
+
+Repo-wide audit findings: `CODE_AUDIT.md`. Credit and upstream licences: `CREDITS.md`.
+iOS port by Priyanshu Naredi; original Android app by Kian Konrad (MIT).
 
 Port: Android APK → native iOS (SwiftUI) IPA — unsigned development build.
 Attribution and upstream projects: `CREDITS.md`.
 
 Project: Android Weather APK Reverse Engineering → Native iOS Port
 Root: `C:\Users\naredi\Downloads\Android Weather APK Reverse Engineering → Native iOS Port`
-Last updated: 2026-11-13
+Last updated: 2026-11-14
 
 ## Phase status
 

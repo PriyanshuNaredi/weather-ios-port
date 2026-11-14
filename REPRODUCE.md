@@ -1,5 +1,27 @@
 # REPRODUCE.md — How to reproduce this project's Phase 1 results
 
+## macOS / Xcode (current path — what actually builds today)
+
+```bash
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer   # xcode-select points at CLT
+cd 05_ios_port/WeatheriOS && xcodegen generate --spec project.yml  # regenerate after adding files
+cd - && ./07_tools/macos-build.sh                                  # build, install, launch (sim)
+./07_tools/macos-tests.sh all                                      # 87 logic + 11 UI tests
+./07_tools/visual-audit.sh                                         # 10 screenshots -> 07_logs/shots/audit/
+swift 07_tools/make-app-icon.swift                                 # regenerate the 1024 app icon
+```
+
+- Regenerating the project matters: a new source or test file is invisible to the build (and
+  silently runs zero tests) until `xcodegen generate` runs.
+- The simulator destination is pinned by UDID, not `booted`, because a second booted simulator
+  (e.g. Orpheon-Test) makes `booted` ambiguous.
+- `07_tools/visual-audit.sh` fails loudly if fewer than 10 screenshots export.
+- The icon needs no Xcode: `make-app-icon.swift` parses the APK's vector and rasterises it.
+
+---
+
+## Historical — Windows/WSL pipeline (kept for provenance)
+
 ## 1. Build the debug APK (WSL pipeline, all tools portable inside this project)
 
 Requirements: Windows with WSL2 Ubuntu; nothing installed system-wide.

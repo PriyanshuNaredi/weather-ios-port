@@ -94,6 +94,13 @@ frames from RainViewer, and draws its own slippy map with a disk tile cache.
 - **Error paths:** a failed refresh never replaces a good cached forecast; radar falls back to a
   snapshot younger than 2 h.
 
+## Finding 7 (build) — the app never compiled an icon
+
+`project.yml` set `ASSETCATALOG_COMPILER_APPICON_NAME` to the empty string on the app target, so
+`actool` produced no `Assets.car` and the app shipped with the blank default tile. Nothing failed:
+the name was an empty value, not a wrong one. Now `AppIcon`, and `07_tools/make-app-icon.swift`
+renders it from the APK's `ic_weather_foreground.xml` vector.
+
 ## Not checked
 
 - `Views/WeatherMapView.swift` (1,139 lines) was read for fetch/eviction/render paths, not line by

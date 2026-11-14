@@ -18,6 +18,7 @@ Store involvement.
 ./07_tools/macos-build.sh          # generate project, build, install, launch
 ./07_tools/macos-tests.sh all      # 87 logic tests + 11 simulator UI tests
 ./07_tools/visual-audit.sh         # 10 named screenshots → 07_logs/shots/audit/
+swift 07_tools/make-app-icon.swift # re-render the 1024 app icon from the APK's vector
 ```
 
 `export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` first — this machine's

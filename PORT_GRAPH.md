@@ -26,6 +26,13 @@ Verified against the working tree: main sources are exactly 5 .kt files (Data 27
 - `01_android_build/logs/`, `01_android_build/reports/` — build log, lint + test reports
 - `07_tools/` — portable JDKs, Android SDKs, jadx, apktool
 
+**macOS deliverables (current pipeline):**
+- `05_ios_port/WeatheriOS/Sources/WeatheriOS/` — SwiftUI app; `Resources/Assets.xcassets/AppIcon.appiconset/icon-1024.png` is rendered output, committed
+- `05_ios_port/WeatheriOS/project.yml` — XcodeGen spec, the source of truth; `.xcodeproj` and `Support/Info.plist` are generated and gitignored
+- `07_tools/macos-build.sh`, `macos-tests.sh`, `visual-audit.sh`, `make-app-icon.swift`
+- `07_logs/shots/audit/` — 10 named screenshots (gitignored); `07_logs/shots/icon-on-home.png` — home-screen proof
+- Docs: `README.md` (status + what the port involved), `CREDITS.md` (upstream projects, licences, shout-outs), `CODE_AUDIT.md` (repo audit), `05_ios_port/MACOS_VERIFICATION.md` (evidence)
+
 **Outside the project root — WSL ext4 (documented deviations, necessary because the Gradle daemon cannot write registry.bin on /mnt/c drvfs):**
 - `/home/naredi/.gradle-weather/` — 1.5 GB total: `caches/` 1.4 GB (dependencies), `wrapper/` 146 MB (Gradle 9.3.1 distribution), `project-cache/` 2.1 MB, `daemon/` 200 KB
 - `/home/naredi/.cache/weather/build/` — 285 MB (the repo's own build.gradle.kts redirects build output to `$user.home/.cache/weather/build`): `outputs/` 109 MB (APK), `intermediates/` 173 MB
