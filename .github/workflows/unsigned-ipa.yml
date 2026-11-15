@@ -1,0 +1,85 @@
+name: Unsigned IPA
+
+# Builds a release IPA with signing disabled. The artifact is NOT installable as-is —
+# SideStore / LiveContainer sign it on-device with the user's own Apple ID.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Also publish a GitHub release for this run (uses the next patch tag)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # required to create releases
+
+concurrency:
+  group: unsigned-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Pinned: the project needs Xcode 16 / iOS 18 SDK. Bump deliberately, not implicitly.
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          xcodegen --version || brew install xcodegen
+
+      - name: Build unsigned IPA
+        env:
+          OUT: ${{ github.workspace }}/dist
+        run: ./07_tools/ipa-build.sh
+
+      - name: Collect artifacts
+        id: artifacts
+        run: |
+          IPA=$(ls dist/*.ipa | head -1)
+          echo "ipa=$(basename "$IPA")" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(shasum -a 256 "$IPA" | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          {
+            echo "| File | Size | SHA-256 |"
+            echo "|---|---|---|"
+            echo "| $(basename "$IPA") | $(du -h "$IPA" | awk '{print $1}') | \`$(shasum -a 256 "$IPA" | awk '{print $1}')\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Weather-unsigned-ipa
+          path: |
+            dist/*.ipa
+            dist/*.sha256
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish release (tag pushes and manual runs)
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.release == true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ github.ref_name }}"
+          if [ "${{ inputs.release }}" = "true" ] && [ "${TAG#v}" = "$TAG" ]; then
+            # Manual run on a branch: tag the commit so repeat runs stay idempotent.
+            VERSION=$(sed -n 's/^ *MARKETING_VERSION: *"\{0,1\}\([^"]*\)"\{0,1\}.*/\1/p' 05_ios_port/WeatheriOS/project.yml | head -1)
+            BUILD=$(sed -n 's/^ *CURRENT_PROJECT_VERSION: *"\{0,1\}\([^"]*\)"\{0,1\}.*/\1/p' 05_ios_port/WeatheriOS/project.yml | head -1)
+            TAG="v${VERSION}-${BUILD}"
+            git tag -f "$TAG" "$GITHUB_SHA"
+            git push -f origin "$TAG"
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.ipa dist/*.sha256 --clobber
+          else
+            gh release create "$TAG" dist/*.ipa dist/*.sha256 \
+              --title "Weather ${TAG#v} — unsigned IPA" \
+              --notes-file .github/release-notes.md
+          fi

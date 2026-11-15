@@ -9,6 +9,7 @@ cd - && ./07_tools/macos-build.sh                                  # build, inst
 ./07_tools/macos-tests.sh all                                      # 87 logic + 11 UI tests
 ./07_tools/visual-audit.sh                                         # 10 screenshots -> 07_logs/shots/audit/
 swift 07_tools/make-app-icon.swift                                 # regenerate the 1024 app icon
+./07_tools/ipa-build.sh                                            # unsigned release IPA (device build)
 ```
 
 - Regenerating the project matters: a new source or test file is invisible to the build (and
@@ -17,6 +18,9 @@ swift 07_tools/make-app-icon.swift                                 # regenerate 
   (e.g. Orpheon-Test) makes `booted` ambiguous.
 - `07_tools/visual-audit.sh` fails loudly if fewer than 10 screenshots export.
 - The icon needs no Xcode: `make-app-icon.swift` parses the APK's vector and rasterises it.
+- `ipa-build.sh` produces an **unsigned** IPA and verifies that it stayed unsigned; installing it
+  needs SideStore (<https://sidestore.io/>) or LiveContainer
+  (<https://github.com/LiveContainer/LiveContainer>), which sign it with the user's own Apple ID.
 
 ---
 

@@ -19,6 +19,7 @@ Store involvement.
 ./07_tools/macos-tests.sh all      # 87 logic tests + 11 simulator UI tests
 ./07_tools/visual-audit.sh         # 10 named screenshots → 07_logs/shots/audit/
 swift 07_tools/make-app-icon.swift # re-render the 1024 app icon from the APK's vector
+./07_tools/ipa-build.sh           # unsigned release IPA → 06_build_artifacts/ipa/
 ```
 
 `export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` first — this machine's
@@ -40,6 +41,31 @@ swift 07_tools/make-app-icon.swift # re-render the 1024 app icon from the APK's 
 
 Tracking: `PORT_GRAPH.md`, `PROJECT_STATUS.md`, `CHANGELOG.md`, `REPRODUCE.md`,
 `CODE_AUDIT.md`, `CREDITS.md`.
+
+## Releases — unsigned IPA
+
+`./07_tools/ipa-build.sh` builds the app for a real device (`-sdk iphoneos`,
+`-configuration Release`) with **signing disabled** and packages
+`Payload/WeatheriOS.app` into `06_build_artifacts/ipa/Weather-<version>-<build>-unsigned.ipa`
+plus a `.sha256`. The script then proves the unsigned state: no `_CodeSignature`, no
+`embedded.mobileprovision`, no `LC_CODE_SIGNATURE`, `codesign` reports the bundle as not
+signed, and the archive passes `unzip -t`.
+
+CI does the same on every `v*` tag (`.github/workflows/unsigned-ipa.yml`, `macos-15`): build →
+upload the IPA as a workflow artifact → create the GitHub release with the install notes from
+`.github/release-notes.md`. `workflow_dispatch` builds on demand and can publish a release too.
+
+> **These IPAs are unsigned.** No Apple ID, certificate or provisioning profile is bundled, so
+> they cannot be installed with Finder/Xcode and will not run on their own. They must be signed
+> on-device by the person installing them:
+>
+> | Tool | Notes | Link |
+> |---|---|---|
+> | **SideStore** | Untethered AltStore fork — installs any `.ipa` with just your Apple ID and refreshes it before the 7-day certificate expires | <https://sidestore.io/> · [docs](https://docs.sidestore.io/docs/installation/install) |
+> | **LiveContainer** | Runs apps in a container so they don't each consume one of the 3 free app slots; ships a `LiveContainer + SideStore` build | <https://github.com/LiveContainer/LiveContainer> · [LC + SideStore guide](https://livecontainer.github.io/docs/installation/lc_sidestore) |
+>
+> With a free Apple ID: 3 active apps, 10 new App IDs per 7 days, 7-day certificates. Verify a
+> download with `shasum -a 256 -c Weather-*-unsigned.ipa.sha256`.
 
 ## What the port involved
 

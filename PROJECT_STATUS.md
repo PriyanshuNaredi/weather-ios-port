@@ -11,10 +11,12 @@
 | Settings, units switch, bundled legal texts | PASS |
 | Visual audit walk (10 screens) | PASS — `07_tools/visual-audit.sh` → `07_logs/shots/audit/` |
 | App icon (`Assets.car` in bundle, home screen) | PASS — rendered from the APK's own vector |
+| Unsigned release IPA | PASS — `07_tools/ipa-build.sh`, 1.2 MB, `arm64`, no `LC_CODE_SIGNATURE` |
+| CI for unsigned IPAs | Workflow added (`.github/workflows/unsigned-ipa.yml`); not yet executed on GitHub |
 | Host logic suite | PASS 87/87 on the macOS toolchain (59 XCTest + 28 swift-testing) |
 | Simulator UI suite | PASS 11/11 (`WeatheriOSUITests`, visual-audit class excluded) |
 | Idle CPU on the forecast screen | 5.7% (was 100% — invalidation loop, fixed) |
-| Physical device / signing | NOT DONE — no Apple ID/team in this environment |
+| Physical device / signing | NOT DONE — no Apple ID/team in this environment. The unsigned IPA is meant for on-device signing with SideStore/LiveContainer |
 
 Defects found and fixed during this build are listed in
 `05_ios_port/MACOS_VERIFICATION.md` (basemap 200-with-watermark, inert units switch,

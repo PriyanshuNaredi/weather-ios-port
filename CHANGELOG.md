@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 2026-11-14 (release) — unsigned IPA build + CI, install notes
+
+- **`07_tools/ipa-build.sh`:** device Release build with signing disabled, packaged as
+  `Payload/WeatheriOS.app` → `06_build_artifacts/ipa/Weather-<version>-<build>-unsigned.ipa`
+  with a `.sha256`. Verification is part of the script, not a manual step: no `_CodeSignature`,
+  no `embedded.mobileprovision`, no `LC_CODE_SIGNATURE`, `codesign` reports "not signed", and
+  `unzip -t` passes. First artifact: 1.2 MB, `arm64`.
+- **`Learned:`** the first verification pass reported false failures — `unzip -l | grep -q` and
+  `codesign -dv | grep -q` exit early, the producer takes SIGPIPE, and `set -o pipefail` turns
+  that into a failed pipeline. The checks now compare captured output instead of piped greps.
+- **CI:** `.github/workflows/unsigned-ipa.yml` — on `v*` tags (and on demand), builds on
+  `macos-15`, uploads the IPA as a workflow artifact, and publishes a GitHub release with
+  `.github/release-notes.md`. Manual runs can force a release on the current commit.
+- **Docs:** README gains a "Releases — unsigned IPA" section stating plainly that these IPAs are
+  unsigned and must be signed on-device with **SideStore** (<https://sidestore.io/>) or
+  **LiveContainer** (<https://github.com/LiveContainer/LiveContainer>), including the free Apple
+  ID limits (3 apps, 10 App IDs/7 days, 7-day certificates). REPRODUCE, PROJECT_STATUS and
+  CREDITS updated.
+
 ## 2026-11-14 (identity) — app icon, creator credit, README
 
 - **App icon:** rendered at 1024×1024 from the APK's own vector

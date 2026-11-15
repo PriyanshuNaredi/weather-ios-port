@@ -35,6 +35,8 @@ ship in the bundle as `legal/NOTICE.txt` and `legal/Bundled_Dependency_Notices.t
 | **Kotlin / Jetpack Compose / OkHttp** | Stack of the Android original | Apache-2.0 | <https://kotlinlang.org/>, <https://developer.android.com/jetpack/compose> |
 | **XcodeGen** | Generates `WeatheriOS.xcodeproj` from `project.yml`, so no Xcode state is committed | MIT | <https://github.com/yonaskolb/XcodeGen> |
 | **ponytail** (Dietrich Gebert) | The audit skill used for the repo-wide code audit in `CODE_AUDIT.md` | MIT | <https://github.com/DietrichGebert/ponytail> |
+| **SideStore** | On-device signer used to install the unsigned release IPA with a personal Apple ID | AGPL-3.0 | <https://github.com/SideStore/SideStore> |
+| **LiveContainer** | Alternative on-device container/signer for the unsigned IPA | see project | <https://github.com/LiveContainer/LiveContainer> |
 | **pi** (free-pi CLI) | The agent harness the port was built and tested in | see project | <https://github.com/earendil-works/pi> |
 
 ## Shout-outs
